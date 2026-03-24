@@ -6,7 +6,7 @@ from utils.data_loader import load_csv, process_data, handle_missing, apply_filt
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Analyse de Survie",
-    page_icon="📊",
+    page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded",
 )
