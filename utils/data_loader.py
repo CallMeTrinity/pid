@@ -34,13 +34,14 @@ def process_data(df: pd.DataFrame, time_col: str, event_col: str) -> pd.DataFram
             labels=["<18", "18-26", ">26"], right=True,
         )
 
-    # Suppression des doublons : garder Event=1 en priorite
-    id_cols = [c for c in df.columns if c not in [time_col, event_col, "Tranche_Age", "Tranche_BMI"]]
+    # Suppression des vrais doublons (lignes identiques sur toutes les colonnes d'origine)
+    # Si un patient apparait 2 fois, garder la ligne avec Event=1
+    orig_cols = [c for c in df.columns if c not in ["Tranche_Age", "Tranche_BMI"]]
     before = len(df)
-    df = df.sort_values(event_col, ascending=False).drop_duplicates(subset=id_cols, keep="first")
+    df = df.sort_values(event_col, ascending=False).drop_duplicates(subset=orig_cols, keep="first")
     removed = before - len(df)
     if removed > 0:
-        st.sidebar.info(f"{removed} doublon(s) supprime(s)")
+        st.sidebar.info(f"{removed} doublon(s) exact(s) supprime(s)")
 
     return df.reset_index(drop=True)
 
