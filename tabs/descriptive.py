@@ -37,6 +37,27 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     col4.metric("Min", f"{t.min():.1f}")
     col5.metric("Max", f"{t.max():.1f}")
 
+    # ── Dynamic interpretation of time variable ─────────────────────────────
+    skew = t.skew()
+    if abs(skew) < 0.5:
+        shape_txt = "relativement symetrique"
+    elif skew > 0:
+        shape_txt = "asymetrique a droite (etalee vers les grandes valeurs)"
+    else:
+        shape_txt = "asymetrique a gauche (etalee vers les petites valeurs)"
+
+    iqr = t.quantile(0.75) - t.quantile(0.25)
+    cv = t.std() / t.mean() * 100
+
+    st.markdown(
+        f"La distribution du temps de suivi est **{shape_txt}** (skewness = {skew:.2f}). "
+        f"L'ecart interquartile est de **{iqr:.1f} mois** (50% des patients ont un temps "
+        f"de suivi compris entre {t.quantile(0.25):.1f} et {t.quantile(0.75):.1f} mois). "
+        f"Le coefficient de variation ({cv:.1f}%) indique une "
+        f"{'forte' if cv > 50 else 'moderee' if cv > 30 else 'faible'} dispersion "
+        f"des durees de suivi."
+    )
+
     # ── Qualitatives ──────────────────────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("#### Variables qualitatives")

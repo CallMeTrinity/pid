@@ -55,6 +55,37 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    # ── Dynamic interpretation ─────────────────────────────────────────────────
+    n_events = int(df[event_col].sum())
+    event_rate = df[event_col].mean() * 100
+    median_time = df[time_col].median()
+    mean_time = df[time_col].mean()
+
+    lines = []
+    lines.append(
+        f"Le jeu de donnees contient **{len(df):,} patients** suivis sur une duree "
+        f"mediane de **{median_time:.1f} mois** (moyenne : {mean_time:.1f} mois)."
+    )
+    lines.append(
+        f"Parmi eux, **{n_events}** ({event_rate:.1f}%) ont subi l'evenement etudie, "
+        f"tandis que **{len(df) - n_events}** ({censor_rate:.1f}%) sont censures "
+        f"(evenement non observe a la fin du suivi)."
+    )
+    if censor_rate > 50:
+        lines.append(
+            "Le taux de censure eleve (> 50%) indique qu'une majorite de patients "
+            "n'a pas encore presente l'evenement, ce qui rend les methodes d'analyse "
+            "de survie (Kaplan-Meier, Cox) particulierement adaptees."
+        )
+    elif censor_rate < 20:
+        lines.append(
+            "Le taux de censure faible (< 20%) indique que la plupart des patients "
+            "ont presente l'evenement durant le suivi. Les estimations de survie "
+            "seront donc precises sur l'ensemble de la periode observee."
+        )
+
+    st.markdown(" ".join(lines))
+
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Data preview ───────────────────────────────────────────────────────────

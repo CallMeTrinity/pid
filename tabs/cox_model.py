@@ -38,10 +38,31 @@ Le **Hazard Ratio** $HR = e^{\\beta}$ quantifie l'effet de chaque covariable.
     st.markdown("---")
     st.markdown("### Resultats du modele")
 
+    c_index = cph.concordance_index_
     col1, col2, col3 = st.columns(3)
-    col1.metric("Concordance (C-index)", f"{cph.concordance_index_:.4f}")
+    col1.metric("Concordance (C-index)", f"{c_index:.4f}")
     col2.metric("Observations", f"{int(cph.summary['z'].count() and len(cox_data))}")
     col3.metric("Evenements", f"{int(cox_data[event_col].sum())}")
+
+    if c_index >= 0.7:
+        st.markdown(
+            f"Le C-index de **{c_index:.3f}** indique une bonne capacite discriminante du modele "
+            f"(un C-index de 0.5 correspond au hasard, 1.0 a une discrimination parfaite). "
+            f"Le modele distingue correctement les patients a haut et bas risque dans environ "
+            f"{c_index*100:.0f}% des paires de patients."
+        )
+    elif c_index >= 0.6:
+        st.markdown(
+            f"Le C-index de **{c_index:.3f}** indique une capacite discriminante moderee. "
+            f"Le modele fait mieux que le hasard (0.5) mais pourrait etre ameliore en "
+            f"integrant d'autres variables ou des interactions."
+        )
+    else:
+        st.markdown(
+            f"Le C-index de **{c_index:.3f}** est faible, proche du hasard. "
+            f"Les covariables incluses dans le modele n'expliquent qu'une faible "
+            f"part de la variabilite de la survie."
+        )
 
     summary = cph.summary.copy().reset_index()
     summary.columns = [str(c) for c in summary.columns]
@@ -84,6 +105,36 @@ Le **Hazard Ratio** $HR = e^{\\beta}$ quantifie l'effet de chaque covariable.
             pct = (1 - hr) * 100
             sig = " **(significatif)**" if p < 0.05 else " (non significatif)"
             st.markdown(f"- **{var}** : HR = {hr:.3f} → -{pct:.1f}% de risque{sig}")
+
+    # ── Global interpretation ────────────────────────────────────────────────
+    sig_risk = summary[(summary["exp(coef)"] > 1) & (summary["p"] < 0.05)]
+    sig_prot = summary[(summary["exp(coef)"] < 1) & (summary["p"] < 0.05)]
+
+    if len(sig_risk) > 0 or len(sig_prot) > 0:
+        interp_parts = []
+        if len(sig_risk) > 0:
+            top_risk = sig_risk.sort_values("exp(coef)", ascending=False).iloc[0]
+            risk_name = VAR_LABELS.get(top_risk["covariate"], top_risk["covariate"])
+            risk_pct = (top_risk["exp(coef)"] - 1) * 100
+            interp_parts.append(
+                f"Le facteur de risque le plus important est **{risk_name}** "
+                f"(HR = {top_risk['exp(coef)']:.3f}, soit +{risk_pct:.0f}% de risque de deces)."
+            )
+        if len(sig_prot) > 0:
+            top_prot = sig_prot.sort_values("exp(coef)").iloc[0]
+            prot_name = VAR_LABELS.get(top_prot["covariate"], top_prot["covariate"])
+            prot_pct = (1 - top_prot["exp(coef)"]) * 100
+            interp_parts.append(
+                f"Le facteur protecteur le plus fort est **{prot_name}** "
+                f"(HR = {top_prot['exp(coef)']:.3f}, soit -{prot_pct:.0f}% de risque)."
+            )
+        st.markdown(" ".join(interp_parts))
+    else:
+        st.markdown(
+            "Aucune covariable n'atteint le seuil de significativite (p < 0.05). "
+            "Les effets observes pourraient etre dus au hasard. Cela peut indiquer "
+            "un manque de puissance statistique ou une absence reelle d'effet."
+        )
 
     # ── Forest plot ───────────────────────────────────────────────────────────
     st.markdown("---")
@@ -149,10 +200,24 @@ Le test des **residus de Schoenfeld** verifie que les HR sont constants dans le 
         st.dataframe(ph_display, use_container_width=True, hide_index=True)
 
         all_ok = all(ph_result.summary["p"] > 0.05)
+        violated = [idx for idx, row in ph_result.summary.iterrows() if row["p"] <= 0.05]
         if all_ok:
             st.success("L'hypothese des risques proportionnels est validee pour toutes les covariables.")
+            st.markdown(
+                "Cela signifie que l'effet de chaque variable sur le risque est **constant "
+                "dans le temps**. Les Hazard Ratios estimes ci-dessus sont valables sur "
+                "toute la duree du suivi."
+            )
         else:
+            violated_names = [VAR_LABELS.get(v, v) for v in violated]
             st.warning("L'hypothese n'est pas respectee pour certaines covariables. "
                        "Les resultats du modele de Cox doivent etre interpretes avec prudence.")
+            st.markdown(
+                f"Les variables **{', '.join(violated_names)}** violent l'hypothese de "
+                f"proportionnalite : leur effet sur le risque **varie au cours du temps**. "
+                f"Pour ces variables, le HR moyen rapporte ci-dessus ne reflete pas "
+                f"fidelement la realite. Des modeles stratifies ou a effets dependants "
+                f"du temps pourraient etre plus adaptes."
+            )
     except Exception as e:
         st.warning(f"Test non disponible : {e}")
