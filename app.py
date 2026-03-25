@@ -301,6 +301,9 @@ from tabs.prediction import render as tab_prediction
 from tabs.cox_model import render as tab_cox
 from tabs.comorbidities import render as tab_comorbidities
 from tabs.advanced import render as tab_advanced
+from tabs.comparator import render as tab_comparator
+from tabs.export import render as tab_export
+from tabs.about import render as tab_about
 
 tab_names = [
     "Donnees",
@@ -312,6 +315,9 @@ tab_names = [
     "Modele de Cox",
     "Comorbidites",
     "Avance",
+    "Comparateur",
+    "Export",
+    "A propos",
 ]
 
 tabs = st.tabs(tab_names)
@@ -334,3 +340,9 @@ with tabs[7]:
     tab_comorbidities(df_filtered, time_col, event_col)
 with tabs[8]:
     tab_advanced(df_filtered, time_col, event_col)
+with tabs[9]:
+    tab_comparator(df_filtered, time_col, event_col)
+with tabs[10]:
+    tab_export(df_filtered, time_col, event_col)
+with tabs[11]:
+    tab_about()
