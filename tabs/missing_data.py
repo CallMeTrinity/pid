@@ -3,9 +3,16 @@ import pandas as pd
 import plotly.express as px
 from utils.data_loader import handle_missing
 
+PLOTLY_LAYOUT = dict(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="Inter"),
+)
+
 
 def render(df_raw: pd.DataFrame, df: pd.DataFrame):
-    st.subheader("Gestion des donnees manquantes")
+    st.markdown("### Gestion des donnees manquantes")
 
     # Current state
     missing = df_raw.isna().sum()
@@ -21,7 +28,7 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
     if total_missing == 0:
         st.success("Aucune donnee manquante dans le jeu de donnees.")
     else:
-        st.warning(f"{total_missing} valeur(s) manquante(s) detectee(s).")
+        st.error(f"{total_missing} valeur(s) manquante(s) detectee(s).")
 
     col1, col2 = st.columns([1, 1])
 
@@ -31,20 +38,26 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
 
     with col2:
         st.markdown("#### Visualisation")
-        fig = px.bar(
-            miss_df[miss_df["Valeurs manquantes"] > 0],
-            x="Variable", y="Valeurs manquantes",
-            color="% manquant",
-            color_continuous_scale="Reds",
-            title="Nombre de valeurs manquantes par variable",
-        )
         if miss_df["Valeurs manquantes"].sum() > 0:
+            fig = px.bar(
+                miss_df[miss_df["Valeurs manquantes"] > 0],
+                x="Variable", y="Valeurs manquantes",
+                color="% manquant",
+                color_continuous_scale=["#6C63FF", "#EF4444"],
+                title="Valeurs manquantes par variable",
+            )
+            fig.update_layout(**PLOTLY_LAYOUT)
             st.plotly_chart(fig, use_container_width=True)
         else:
-            st.info("Aucune valeur manquante a afficher.")
+            st.markdown("""
+            <div class="info-card">
+                <h4>Dataset complet</h4>
+                <p>Aucune valeur manquante a afficher. Le jeu de donnees est pret pour l'analyse.</p>
+            </div>
+            """, unsafe_allow_html=True)
 
     # Handling options
-    st.markdown("---")
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("#### Strategies de traitement")
 
     if total_missing == 0:
@@ -79,12 +92,12 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
         }
 
         if strategy != "Aucune" and target_cols:
-            if st.button("Appliquer le traitement"):
+            if st.button("Appliquer le traitement", type="primary"):
                 df_clean = handle_missing(df_raw, strat_map[strategy], target_cols)
                 remaining = int(df_clean.isna().sum().sum())
                 st.success(
                     f"Traitement applique. "
-                    f"Lignes : {len(df_raw)} -> {len(df_clean)}. "
+                    f"Lignes : {len(df_raw)} → {len(df_clean)}. "
                     f"Valeurs manquantes restantes : {remaining}."
                 )
                 st.session_state["df_clean"] = df_clean
