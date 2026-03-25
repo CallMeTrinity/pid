@@ -1,10 +1,20 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+
+PLOTLY_LAYOUT = dict(
+    template="plotly_dark",
+    paper_bgcolor="rgba(0,0,0,0)",
+    plot_bgcolor="rgba(0,0,0,0)",
+    font=dict(family="Inter"),
+)
+
+COLORS = ["#6C63FF", "#3B82F6", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#8B5CF6"]
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
-    st.subheader("Representations graphiques")
+    st.markdown("### Exploration graphique")
 
     # ── Time to Event ─────────────────────────────────────────────────────────
     st.markdown(f"#### Distribution de `{time_col}`")
@@ -13,21 +23,25 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         fig = px.histogram(
             df, x=time_col, nbins=40,
             title=f"Histogramme — {time_col}",
-            color_discrete_sequence=["#1f77b4"],
+            color_discrete_sequence=[COLORS[0]],
+            opacity=0.85,
         )
         med = df[time_col].median()
-        fig.add_vline(x=med, line_dash="dash", line_color="red",
+        fig.add_vline(x=med, line_dash="dash", line_color="#EF4444",
                       annotation_text=f"Mediane: {med:.1f}")
+        fig.update_layout(**PLOTLY_LAYOUT)
         st.plotly_chart(fig, use_container_width=True)
     with col2:
         fig = px.box(
             df, y=time_col, title=f"Boxplot — {time_col}",
-            color_discrete_sequence=["#1f77b4"],
+            color_discrete_sequence=[COLORS[1]],
         )
+        fig.update_layout(**PLOTLY_LAYOUT)
         st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
     # ── Qualitative variables ─────────────────────────────────────────────────
-    st.markdown("---")
     st.markdown("#### Variables qualitatives")
 
     cat_map = {
@@ -45,13 +59,13 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                 counts, x=cat_map[col_name], y="Effectif",
                 color=cat_map[col_name], text="Effectif",
                 title=cat_map[col_name],
-                color_discrete_sequence=px.colors.qualitative.Set2,
+                color_discrete_sequence=COLORS,
             )
             fig.update_traces(textposition="outside")
-            fig.update_layout(showlegend=False)
+            fig.update_layout(showlegend=False, **PLOTLY_LAYOUT)
             widget.plotly_chart(fig, use_container_width=True)
 
-    # Binary variables as pie charts
+    # Binary variables as donut charts
     bin_map = {"Smoker": ("Fumeur", {0: "Non", 1: "Oui"}),
                "Event_Observed": ("Evenement", {0: "Censure", 1: "Deces"})}
     bin_cols = [c for c in bin_map if c in df.columns]
@@ -66,12 +80,15 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             fig = px.pie(
                 counts, names=label, values="Effectif",
                 title=label,
-                color_discrete_sequence=px.colors.qualitative.Set2,
+                color_discrete_sequence=COLORS,
+                hole=0.35,
             )
+            fig.update_layout(**PLOTLY_LAYOUT)
             widget.plotly_chart(fig, use_container_width=True)
 
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
     # ── Quantitative variables ────────────────────────────────────────────────
-    st.markdown("---")
     st.markdown("#### Variables quantitatives")
 
     quant_map = [("Age", "Age (annees)"), ("BMI", "IMC"), ("Comorbidities", "Comorbidites")]
@@ -83,18 +100,21 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             fig = px.histogram(
                 df, x=col_name, nbins=30, title=label,
                 labels={col_name: label},
-                color_discrete_sequence=["#ff7f0e"],
+                color_discrete_sequence=[COLORS[2]],
+                opacity=0.85,
             )
             mean_v = df[col_name].mean()
             med_v = df[col_name].median()
-            fig.add_vline(x=mean_v, line_dash="dash", line_color="blue",
+            fig.add_vline(x=mean_v, line_dash="dash", line_color="#3B82F6",
                           annotation_text=f"Moy: {mean_v:.1f}")
-            fig.add_vline(x=med_v, line_dash="dot", line_color="red",
+            fig.add_vline(x=med_v, line_dash="dot", line_color="#EF4444",
                           annotation_text=f"Med: {med_v:.1f}")
+            fig.update_layout(**PLOTLY_LAYOUT)
             widget.plotly_chart(fig, use_container_width=True)
 
+    st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
     # ── Exploration croisee ───────────────────────────────────────────────────
-    st.markdown("---")
     st.markdown("#### Exploration croisee")
 
     num_options = [c for c in df.select_dtypes(include="number").columns if c != event_col]
@@ -115,7 +135,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         x=x_var, y=time_col, color=color_var,
         title=f"{x_var} vs {time_col}",
         labels={time_col: "Temps de suivi (mois)"},
-        opacity=.5,
-        color_discrete_sequence=px.colors.qualitative.Set1,
+        opacity=.6,
+        color_discrete_sequence=COLORS,
     )
+    fig.update_layout(**PLOTLY_LAYOUT)
     st.plotly_chart(fig, use_container_width=True)

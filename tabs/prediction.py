@@ -67,13 +67,46 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
     # Key time points
     st.markdown("#### Probabilites de survie estimees")
     time_points = [12, 24, 36, 60, 100]
+    probs = {}
     cols = st.columns(len(time_points))
     for col_w, t in zip(cols, time_points):
         if (surv_func.index <= t).any():
             prob = float(surv_func[surv_func.index <= t].iloc[-1, 0])
         else:
             prob = 1.0
+        probs[t] = prob
         col_w.metric(f"S({t} mois)", f"{prob*100:.1f}%")
+
+    # Dynamic interpretation of the patient profile
+    profile_desc = []
+    if age >= 65:
+        profile_desc.append("age avance")
+    elif age <= 45:
+        profile_desc.append("relativement jeune")
+    if smoker == "Oui":
+        profile_desc.append("fumeur")
+    if treatment == "Experimental":
+        profile_desc.append("sous traitement experimental")
+    if activity == "High":
+        profile_desc.append("physiquement actif")
+    elif activity == "Low":
+        profile_desc.append("faible activite physique")
+
+    profile_txt = ", ".join(profile_desc) if profile_desc else "profil moyen"
+    st.markdown(
+        f"Pour ce patient ({profile_txt}), le modele estime une probabilite de survie "
+        f"de **{probs[12]*100:.0f}%** a 1 an et **{probs[36]*100:.0f}%** a 3 ans. "
+    )
+    if probs[36] > 0.7:
+        st.markdown(
+            "Ce profil presente un **pronostic favorable** avec une probabilite de survie "
+            "elevee a moyen terme."
+        )
+    elif probs[12] < 0.5:
+        st.markdown(
+            "Ce profil presente un **pronostic defavorable** : la probabilite de survie "
+            "a 1 an est inferieure a 50%. Une prise en charge renforcee pourrait etre envisagee."
+        )
 
     # ── Comparison with reference profiles ────────────────────────────────────
     st.markdown("---")
