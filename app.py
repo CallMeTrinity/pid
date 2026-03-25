@@ -183,7 +183,7 @@ section[data-testid="stSidebar"] [data-testid="stMetric"] {
 st.markdown("""
 <div class="hero">
     <h1>Analyse de Survie des Patients</h1>
-    <p>Master MIAGE M1 — Data Science et Applications (2025-2026) · Pipeline interactif d'analyse de survie</p>
+    <p>Master MIAGE M1 — Projet Ingénierie de Données (2025-2026) · Pipeline interactif d'analyse de survie</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -300,6 +300,7 @@ from tabs.survival import render as tab_survival
 from tabs.prediction import render as tab_prediction
 from tabs.cox_model import render as tab_cox
 from tabs.comorbidities import render as tab_comorbidities
+from tabs.advanced import render as tab_advanced
 
 tab_names = [
     "Donnees",
@@ -310,6 +311,7 @@ tab_names = [
     "Prediction",
     "Modele de Cox",
     "Comorbidites",
+    "Avance",
 ]
 
 tabs = st.tabs(tab_names)
@@ -330,3 +332,5 @@ with tabs[6]:
     tab_cox(df_filtered, time_col, event_col)
 with tabs[7]:
     tab_comorbidities(df_filtered, time_col, event_col)
+with tabs[8]:
+    tab_advanced(df_filtered, time_col, event_col)
