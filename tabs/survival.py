@@ -12,20 +12,20 @@ from utils.plots import (
 GROUP_OPTIONS = {
     "Sexe": "Sex",
     "Traitement": "Treatment",
-    "Activite physique": "Physical_Activity",
+    "Activité physique": "Physical_Activity",
     "Fumeur": "Smoker",
-    "Tranche d'age": "Tranche_Age",
+    "Tranche d'âge": "Tranche_Age",
     "Tranche IMC": "Tranche_BMI",
 }
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
-    st.subheader("Probabilites de survie et courbes de survie")
+    st.subheader("Probabilités de survie et courbes de survie")
 
     available_groups = {k: v for k, v in GROUP_OPTIONS.items() if v in df.columns}
 
     section = st.radio(
-        "Section", ["Kaplan-Meier", "Nelson-Aalen", "Tests de comparaison"],
+        "Section", ["Kaplan-Meier", "Nelson-Aalen"],
         horizontal=True, key="surv_section",
     )
 
@@ -86,7 +86,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
         # Stratified
         st.markdown("---")
-        st.markdown("#### Courbes de survie stratifiees")
+        st.markdown("#### Courbes de survie stratifiées")
         group_label = st.selectbox(
             "Variable de stratification", list(available_groups.keys()), key="km_group"
         )
@@ -106,6 +106,11 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             # Log-rank
             r = logrank_result(df, time_col, event_col, group_col)
             st.markdown("**Test du Log-Rank**")
+            st.info("""
+            - H0 : les fonctions de survie sont identiques
+            - H1 : au moins un groupe differe
+            - Rejet de H0 si **p < 0.05**
+            """)
             st.metric("Statistique", f"{r['stat']:.4f}")
             st.metric("p-value", f"{r['p']:.4f}")
             if r["p"] < 0.05:
@@ -134,8 +139,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         else:
             interp += (
                 f"Cependant, le test du Log-Rank indique que cette difference **n'est pas "
-                f"statistiquement significative** (p = {r['p']:.4f}). Les ecarts observes "
-                f"pourraient etre dus au hasard."
+                f"statistiquement significative** (p = {r['p']:.4f}). La variable **{group_label}** ne semble pas avoir un impact sur la survie des patients."
+                f" Les écarts pourraient etre dus au hasard."
             )
         st.markdown(interp)
 
@@ -167,9 +172,9 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         st.markdown(
             f"Le risque cumule atteint **{h12:.3f}** a 12 mois et **{h36:.3f}** a 36 mois "
             f"(multiplication par {ratio_36_12:.1f}). "
-            f"{'Le risque augmente de facon reguliere, suggerant un taux de risque relativement constant.' if 1.5 < ratio_36_12 < 4.5 else ''}"
+            f"{"La courbe croît de façon approximativement linéaire, ce qui indique que le taux de risque instantané reste relativement stable dans le temps. Le risque d'événement à chaque instant ne s'accélère ni ne diminue au fil du suivi." if 1.5 < ratio_36_12 < 4.5 else ''}"
             f"{'Le risque accelere fortement apres la premiere annee, ce qui peut indiquer une aggravation progressive de la maladie.' if ratio_36_12 >= 4.5 else ''}"
-            f"{'Le risque cumule progresse lentement, suggerant une population a faible risque dans cette periode.' if ratio_36_12 <= 1.5 else ''}"
+            f"{'Le risque cumulé progresse lentement, suggerant une population a faible risque dans cette periode.' if ratio_36_12 <= 1.5 else ''}"
         )
 
         # Estimation interactive
@@ -231,72 +236,3 @@ fonction croissante.
   fragiles disparaissent tot, laissant une population plus resistante.
 - Une courbe H(t) lineaire indiquerait un risque constant (modele exponentiel).
 """)
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # TESTS DE COMPARAISON
-    # ══════════════════════════════════════════════════════════════════════════
-    else:
-        st.markdown("---")
-        st.markdown("### Tests de comparaison des fonctions de survie (Log-Rank)")
-        st.markdown("""
-Le test du **Log-Rank** (Mantel-Haenszel) compare les fonctions de survie de
-deux ou plusieurs groupes :
-- H0 : les fonctions de survie sont identiques
-- H1 : au moins un groupe differe
-- Rejet de H0 si **p < 0.05**
-""")
-
-        results_rows = []
-        for label, col in available_groups.items():
-            if col in df.columns and df[col].nunique() >= 2:
-                r = logrank_result(df, time_col, event_col, col)
-                results_rows.append({
-                    "Variable": label,
-                    "Groupes": df[col].nunique(),
-                    "Test": r["test"],
-                    "Statistique": f"{r['stat']:.4f}",
-                    "p-value": f"{r['p']:.4f}",
-                    "Significatif": "Oui" if r["p"] < 0.05 else "Non",
-                })
-
-        if results_rows:
-            st.dataframe(pd.DataFrame(results_rows), use_container_width=True, hide_index=True)
-
-            sig_vars = [r["Variable"] for r in results_rows if r["Significatif"] == "Oui"]
-            nonsig_vars = [r["Variable"] for r in results_rows if r["Significatif"] == "Non"]
-            if sig_vars:
-                st.markdown(
-                    f"Les variables **{', '.join(sig_vars)}** montrent une difference "
-                    f"statistiquement significative (p < 0.05) entre les groupes. "
-                    f"Ces facteurs ont un impact mesurable sur la survie des patients."
-                )
-            if nonsig_vars:
-                st.markdown(
-                    f"En revanche, les variables **{', '.join(nonsig_vars)}** ne montrent "
-                    f"pas de difference significative. L'effet de ces facteurs sur la survie "
-                    f"n'est pas etabli avec les donnees disponibles."
-                )
-
-        st.markdown("---")
-        st.markdown("#### Comparaison detaillee")
-        group_label = st.selectbox(
-            "Choisir une variable", list(available_groups.keys()), key="lr_group"
-        )
-        group_col = available_groups[group_label]
-
-        col1, col2 = st.columns(2)
-        with col1:
-            fig = plot_km_stratified(df, time_col, event_col, group_col)
-            st.pyplot(fig)
-            plt.close(fig)
-        with col2:
-            medians = km_median_by_group(df, time_col, event_col, group_col)
-            st.dataframe(medians, use_container_width=True, hide_index=True)
-
-            r = logrank_result(df, time_col, event_col, group_col)
-            st.metric("Statistique du test", f"{r['stat']:.4f}")
-            st.metric("p-value", f"{r['p']:.6f}")
-            if r["p"] < 0.05:
-                st.success(f"Les courbes de survie different significativement selon **{group_label}**.")
-            else:
-                st.warning(f"Pas de difference significative selon **{group_label}**.")

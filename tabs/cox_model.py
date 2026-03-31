@@ -46,35 +46,39 @@ Le **Hazard Ratio** $HR = e^{\\beta}$ quantifie l'effet de chaque covariable.
 
     if c_index >= 0.7:
         st.markdown(
-            f"Le C-index de **{c_index:.3f}** indique une bonne capacite discriminante du modele "
-            f"(un C-index de 0.5 correspond au hasard, 1.0 a une discrimination parfaite). "
-            f"Le modele distingue correctement les patients a haut et bas risque dans environ "
-            f"{c_index*100:.0f}% des paires de patients."
+            f"Le C-index de **{c_index:.3f}** indique une bonne capacité discriminante : "
+            f"le modèle identifie correctement quel patient aura l'événement en premier dans "
+            f"{c_index * 100:.0f}% des paires, contre 50% pour un modèle aléatoire."
         )
     elif c_index >= 0.6:
         st.markdown(
-            f"Le C-index de **{c_index:.3f}** indique une capacite discriminante moderee. "
-            f"Le modele fait mieux que le hasard (0.5) mais pourrait etre ameliore en "
-            f"integrant d'autres variables ou des interactions."
+            f"Le C-index de **{c_index:.3f}** indique une capacité discriminante modérée : "
+            f"le modèle classe correctement l'ordre des événements dans {c_index * 100:.0f}% "
+            f"des paires : mieux que le hasard (50%), mais une valeur sous 0.7 suggère que "
+            f"des variables supplémentaires ou des interactions pourraient améliorer la prédiction."
         )
     else:
         st.markdown(
-            f"Le C-index de **{c_index:.3f}** est faible, proche du hasard. "
-            f"Les covariables incluses dans le modele n'expliquent qu'une faible "
-            f"part de la variabilite de la survie."
+            f"Le C-index de **{c_index:.3f}** est faible, proche du hasard (50%) : "
+            f"les covariables incluses expliquent peu la variabilité des temps de survie. "
+            f"L'ajout de nouvelles variables pourrait améliorer le modèle."
         )
 
     summary = cph.summary.copy().reset_index()
     summary.columns = [str(c) for c in summary.columns]
 
-    display = summary[["covariate", "coef", "exp(coef)",
-                       "exp(coef) lower 95%", "exp(coef) upper 95%", "z", "p"]].copy()
-    display.columns = ["Variable", "Coef (beta)", "HR", "IC bas 95%", "IC haut 95%", "z", "p-value"]
+    display = summary[["covariate", "exp(coef)",
+                       "exp(coef) lower 95%", "exp(coef) upper 95%", "p"]].copy()
+    display.columns = ["Variable", "HR", "IC bas 95%", "IC haut 95%", "p-value"]
     display["Variable"] = display["Variable"].map(VAR_LABELS).fillna(display["Variable"])
     display["Significatif"] = display["p-value"].apply(lambda p: "Oui" if p < 0.05 else "Non")
-    display["Effet"] = display["HR"].apply(lambda hr: "Risque (+)" if hr > 1 else "Protecteur (-)")
+    display["Effet"] = display.apply(
+        lambda row: ("Risque (+)" if row["HR"] > 1 else "Protecteur (-)")
+        if row["Significatif"] == "Oui" else "Non significatif",
+        axis=1
+    )
 
-    for c in ["Coef (beta)", "HR", "IC bas 95%", "IC haut 95%", "z"]:
+    for c in ["HR", "IC bas 95%", "IC haut 95%"]:
         display[c] = display[c].round(4)
     display["p-value"] = display["p-value"].apply(lambda p: f"{p:.6f}" if p >= 0.001 else "< 0.001")
 

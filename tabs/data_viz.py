@@ -93,7 +93,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     st.dataframe(df, use_container_width=True, height=350)
 
     # ── Variable types ─────────────────────────────────────────────────────────
-    with st.expander("Inspection des variables", expanded=False):
+    with st.expander("Informations sur les variables", expanded=False):
         types_df = pd.DataFrame({
             "Variable": df.columns,
             "Type": [str(df[c].dtype) for c in df.columns],

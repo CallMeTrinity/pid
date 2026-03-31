@@ -80,13 +80,13 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                 counts = df[col_name].value_counts()
                 freq = df[col_name].value_counts(normalize=True) * 100
                 freq_df = pd.DataFrame({
-                    "Modalite": counts.index.astype(str),
+                    "": counts.index.astype(str),
                     "Effectif": counts.values,
                     "% ": freq.values.round(1),
                 })
                 st.markdown(f"**{col_name}**")
                 fig = px.bar(
-                    freq_df, x="Modalite", y="Effectif", text="% ",
+                    freq_df, x="", y="Effectif", text="% ",
                     color_discrete_sequence=[COLORS[i % len(COLORS)]],
                     height=250,
                 )

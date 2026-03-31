@@ -91,7 +91,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     # ── Quantitative variables ────────────────────────────────────────────────
     st.markdown("#### Variables quantitatives")
 
-    quant_map = [("Age", "Age (annees)"), ("BMI", "IMC"), ("Comorbidities", "Comorbidites")]
+    quant_map = [("Age", "Age (années)"), ("BMI", "IMC"), ("Comorbidities", "Comorbidités")]
     quant_cols = [(c, l) for c, l in quant_map if c in df.columns]
 
     if quant_cols:
@@ -105,8 +105,6 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             )
             mean_v = df[col_name].mean()
             med_v = df[col_name].median()
-            fig.add_vline(x=mean_v, line_dash="dash", line_color="#3B82F6",
-                          annotation_text=f"Moy: {mean_v:.1f}")
             fig.add_vline(x=med_v, line_dash="dot", line_color="#EF4444",
                           annotation_text=f"Med: {med_v:.1f}")
             fig.update_layout(**PLOTLY_LAYOUT)
@@ -115,7 +113,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Exploration croisee ───────────────────────────────────────────────────
-    st.markdown("#### Exploration croisee")
+    st.markdown("#### Exploration croisée")
 
     num_options = [c for c in df.select_dtypes(include="number").columns if c != event_col]
     cat_options = ["Sex", "Treatment", "Physical_Activity", "Smoker",
