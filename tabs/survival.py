@@ -35,10 +35,12 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     if section == "Kaplan-Meier":
         st.markdown("---")
         st.markdown("### Estimateur de Kaplan-Meier")
+        st.markdown("L’estimateur de Kaplan-Meier permet d’estimer la probabilité de survie des patients au cours du temps, en tenant compte du fait que certains patients peuvent être censurés (perdus de vue ou encore en vie à la fin de l’étude).")
         st.latex(r"\hat{S}(t) = \prod_{t_i \le t} \left(1 - \frac{d_i}{n_i}\right)")
 
         # Global curve
         st.markdown("#### Courbe de survie globale")
+        st.markdown("La courbe de Kaplan-Meier montre l’évolution de la probabilité de survie des patients au cours du temps.")
         fig, kmf_global = plot_km_global(df, time_col, event_col)
         st.pyplot(fig)
         plt.close(fig)
@@ -56,7 +58,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             f"La survie mediane est estimee a **{median_surv:.1f} mois**, ce qui signifie "
             f"que 50% des patients survivent au-dela de cette duree. "
             f"A 12 mois, **{s12*100:.1f}%** des patients sont encore en vie ; "
-            f"a 36 mois, cette proportion descend a **{s36*100:.1f}%**. "
+            f"a 36 mois, cette proportion descend a **{s36*100:.1f}%**. Ce qui traduit une diminution progressive de la probabilité de survie au cours du temps."
         )
         if s12 > 0.9:
             st.markdown(
@@ -71,6 +73,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
         # Survival table
         st.markdown("#### Tableau des probabilites de survie")
+        st.markdown("Le tableau des probabilités de survie permet de détailler l’évolution de la survie des patients à différents instants du suivi.")
         table, _ = km_survival_table(df, time_col, event_col, [12, 24, 36, 60, 100])
         st.dataframe(table, use_container_width=True, hide_index=True)
 
@@ -140,7 +143,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             interp += (
                 f"Cependant, le test du Log-Rank indique que cette difference **n'est pas "
                 f"statistiquement significative** (p = {r['p']:.4f}). La variable **{group_label}** ne semble pas avoir un impact sur la survie des patients."
-                f" Les écarts pourraient etre dus au hasard."
+                f" Cela signifie que la différence observée entre les groupes peut être due au hasard."
             )
         st.markdown(interp)
 
@@ -150,11 +153,13 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     elif section == "Nelson-Aalen":
         st.markdown("---")
         st.markdown("### Estimateur de Nelson-Aalen")
+        st.markdown("L’estimateur de Nelson-Aalen permet d’estimer le risque cumulé de survenue de l’événement (ici le décès) au cours du temps.")
         st.latex(r"\hat{H}(t) = \sum_{t_i \le t} \frac{d_i}{n_i}")
         st.markdown("Relation avec la survie : $S(t) \\approx e^{-H(t)}$")
 
         # Global
         st.markdown("#### Risque cumule global")
+        st.markdown("Cette courbe permet de visualiser l’accumulation du risque de décès au cours du temps.")
         fig, naf_global = plot_na_global(df, time_col, event_col)
         st.pyplot(fig)
         plt.close(fig)
@@ -172,7 +177,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         st.markdown(
             f"Le risque cumule atteint **{h12:.3f}** a 12 mois et **{h36:.3f}** a 36 mois "
             f"(multiplication par {ratio_36_12:.1f}). "
-            f"{"La courbe croît de façon approximativement linéaire, ce qui indique que le taux de risque instantané reste relativement stable dans le temps. Le risque d'événement à chaque instant ne s'accélère ni ne diminue au fil du suivi." if 1.5 < ratio_36_12 < 4.5 else ''}"
+            f"{"La courbe croît de façon approximativement linéaire, ce qui indique que le taux de risque instantané de deces reste relativement stable dans le temps. Le risque d'événement à chaque instant ne s'accélère ni ne diminue au fil du suivi." if 1.5 < ratio_36_12 < 4.5 else ''}"
             f"{'Le risque accelere fortement apres la premiere annee, ce qui peut indiquer une aggravation progressive de la maladie.' if ratio_36_12 >= 4.5 else ''}"
             f"{'Le risque cumulé progresse lentement, suggerant une population a faible risque dans cette periode.' if ratio_36_12 <= 1.5 else ''}"
         )
@@ -205,7 +210,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             f"A **{t_input:.0f} mois**, la probabilite de survie estimee par Kaplan-Meier est de "
             f"**{s_t_km*100:.2f}%**, tandis que l'approximation via Nelson-Aalen donne "
             f"**{s_t_na*100:.2f}%** (ecart de {diff_pct:.2f} points). "
-            f"{'Les deux estimations sont tres proches, ce qui est attendu pour des echantillons de taille suffisante.' if diff_pct < 2 else 'L ecart entre les deux methodes est notable, ce qui peut arriver avec des echantillons petits ou des taux de censure eleves.'}"
+            f"{'Les deux estimations sont tres proches, ce qui est attendu pour des echantillons de taille suffisante, ce qui confirme la cohérence des estimations.' if diff_pct < 2 else 'L ecart entre les deux methodes est notable, ce qui peut arriver avec des echantillons petits ou des taux de censure eleves.'}"
         )
 
         # Stratified
@@ -219,20 +224,26 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         st.pyplot(fig)
         plt.close(fig)
 
+        st.markdown("Les différences entre les courbes indiquent que certains groupes accumulent un risque de décès plus rapidement que d’autres.")
+
         # Interpretation
-        with st.expander("Interpretation"):
+        st.markdown("---")
+        with st.expander("Interprétation de la fonction de risque cumulée"):
             st.markdown("""
-**Que represente la fonction de risque cumulee H(t) ?**
+**Que représente la fonction de risque cumulée H(t) ?**
 
-H(t) mesure le risque total accumule jusqu'au temps t. Elle resume la quantite
-totale de risque qu'un individu a supporte. Contrairement a S(t), H(t) est une
-fonction croissante.
+La fonction de risque cumulée H(t) mesure le risque total de décès accumulé 
+jusqu’au temps t. Elle représente la quantité de risque qu’un individu a cumulée 
+au cours du temps. Contrairement à la probabilité de survie S(t), cette fonction 
+est croissante.
 
-**Comment evolue le risque cumulatif avec le temps ?**
+**Comment évolue le risque cumulatif avec le temps ?**
 
-- En debut de suivi, H(t) croit rapidement : le taux de risque instantane
-  est eleve (beaucoup d'evenements).
-- Le rythme ralentit ensuite : effet de selection — les individus les plus
-  fragiles disparaissent tot, laissant une population plus resistante.
-- Une courbe H(t) lineaire indiquerait un risque constant (modele exponentiel).
+On observe que le risque cumulé de décès augmente avec le temps, ce qui est attendu 
+puisque les événements s’accumulent au fil du suivi. Au début, la courbe augmente 
+relativement rapidement, ce qui indique un nombre important d'évènements (décès). 
+Ensuite, la croissance devient plus régulière, suggérant que le risque instantané de 
+décès reste globalement stable dans le temps. Si la courbe de risque cumulée H(t) est 
+approximativement linéaire, cela suggère que le risque instantané est constant au 
+cours du temps, ce qui correspond à un modèle exponentiel.
 """)

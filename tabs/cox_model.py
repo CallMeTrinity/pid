@@ -19,12 +19,16 @@ VAR_LABELS = {
 def render(df: pd.DataFrame, time_col: str, event_col: str):
     st.subheader("Modele de regression de Cox")
     st.markdown("""
-Le modele de Cox a risques proportionnels modelise le taux de risque :
+    Le modèle de Cox permet d’analyser l’impact de plusieurs variables (âge, tabagisme, traitement, etc.) sur le risque de décès des patients au cours du temps.
+    """)
 
-$$h(t|X) = h_0(t) \\cdot \\exp(\\beta_1 X_1 + \\cdots + \\beta_p X_p)$$
-
-Le **Hazard Ratio** $HR = e^{\\beta}$ quantifie l'effet de chaque covariable.
-""")
+    st.latex(r"h(t|X) = h_0(t) \cdot \exp(\beta_1 X_1 + \cdots + \beta_p X_p)")
+    st.markdown("""
+    Le **Hazard Ratio** $HR = e^{\\beta}$ quantifie l'effet de chaque covariable.
+                
+    Un Hazard Ratio (HR) supérieur à 1 indique une augmentation du risque de décès, 
+    tandis qu’un HR inférieur à 1 indique un effet protecteur. Si l’intervalle de 
+    confiance à 95% contient 1, l’effet n’est pas statistiquement significatif.""")
 
     # ── Fit model ─────────────────────────────────────────────────────────────
     cox_data = prepare_cox_data(df, time_col, event_col)
@@ -152,6 +156,15 @@ Le **Hazard Ratio** $HR = e^{\\beta}$ quantifie l'effet de chaque covariable.
     st.markdown("---")
     st.markdown("### Courbes de survie ajustees")
 
+    st.markdown("Les courbes de survie ajustées permettent de visualiser l’impact "
+    "réel d’une variable sur la survie en tenant compte simultanément des autres "
+    "facteurs du modèle (âge, sexe, tabagisme, traitement, etc.). Elles permettent "
+    "ainsi d’isoler l’impact réel d’une variable, indépendamment des autres "
+    "caractéristiques des patients.\n\n"
+    "Concrètement, cela signifie que deux patients ayant les mêmes caractéristiques, " 
+    "sauf pour une variable donnée (par exemple le tabagisme), n’auront pas le même " 
+    "risque de décès.")
+
     COV_OPTIONS = {
         "Traitement (Standard=0 / Experimental=1)": ("Treatment_Experimental", [0, 1]),
         "Fumeur (Non=0 / Oui=1)": ("Smoker", [0, 1]),
@@ -194,6 +207,8 @@ Le test des **residus de Schoenfeld** verifie que les HR sont constants dans le 
         ph_table.columns = [str(c) for c in ph_table.columns]
 
         ph_display = ph_table.copy()
+        if "-log2(p)" in ph_display.columns:
+            ph_display = ph_display.drop(columns=["-log2(p)"])
         if ph_display.columns[0] != "Variable":
             ph_display = ph_display.rename(columns={ph_display.columns[0]: "Variable"})
         ph_display["Variable"] = ph_display["Variable"].map(VAR_LABELS).fillna(ph_display["Variable"])
@@ -208,9 +223,9 @@ Le test des **residus de Schoenfeld** verifie que les HR sont constants dans le 
         if all_ok:
             st.success("L'hypothese des risques proportionnels est validee pour toutes les covariables.")
             st.markdown(
-                "Cela signifie que l'effet de chaque variable sur le risque est **constant "
-                "dans le temps**. Les Hazard Ratios estimes ci-dessus sont valables sur "
-                "toute la duree du suivi."
+                "Cela signifie que l’effet des variables sur le risque de décès reste **constant dans le " 
+                "temps**. Le modèle de Cox est donc valide et ses résultats peuvent être interprétés de " 
+                "manière fiable."
             )
         else:
             violated_names = [VAR_LABELS.get(v, v) for v in violated]

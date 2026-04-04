@@ -39,6 +39,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         fig.update_layout(**PLOTLY_LAYOUT)
         st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("La distribution de la variable Time_to_Event est fortement asymétrique à droite, montrant que la majorité des événements surviennent dans les premiers mois (entre 0 et environ 50), tandis que quelques patients présentent des durées de survie beaucoup plus longues.")
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Qualitative variables ─────────────────────────────────────────────────
