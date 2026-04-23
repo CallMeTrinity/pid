@@ -112,11 +112,11 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
     st.markdown("---")
     st.markdown("#### Comparaison avec des profils de reference")
     st.markdown("""
-    - **Profil haut risque** : Homme, 70 ans, fumeur, traitement standard, activite faible
-    - **Profil intermediaire** : Homme, 55 ans, non-fumeur, traitement standard, activite moderee
-    - **Profil protege** : Femme, 45 ans, non-fumeuse, traitement experimental, activite haute
+    - **Exemple de profil haut risque** : Homme, 70 ans, fumeur, traitement standard, activite faible
+    - **Exemple de profil intermediaire** : Homme, 55 ans, non-fumeur, traitement standard, activite moderee
+    - **Exemple de profil protege** : Femme, 45 ans, non-fumeuse, traitement experimental, activite haute
     """)
-
+    
     ref_profiles = pd.DataFrame([
         {"Age": 70, "Sex_Female": 0, "Smoker": 1, "Treatment_Experimental": 0, "Activity_High": 0, "Activity_Moderate": 0},
         {"Age": 55, "Sex_Female": 0, "Smoker": 0, "Treatment_Experimental": 0, "Activity_High": 0, "Activity_Moderate": 1},
