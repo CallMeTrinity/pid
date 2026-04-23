@@ -8,7 +8,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     # ── KPI row ────────────────────────────────────────────────────────────────
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Patients", f"{len(df):,}")
+    col1.metric("Patients", f"{len(df):}")
     col2.metric("Variables", len(df.columns))
     col3.metric("Evenements", f"{int(df[event_col].sum()):,}")
     censor_rate = (1 - df[event_col].mean()) * 100

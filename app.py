@@ -269,7 +269,7 @@ with st.sidebar:
             filters["Physical_Activity"] = st.multiselect("Activite physique", opts, default=opts)
 
         if "BMI" in df.columns:
-            bmin, bmax = float(df["BMI"].min()), float(df["BMI"].max())
+            bmin, bmax = int(df["BMI"].min()), int(df["BMI"].max())
             filters["BMI"] = st.slider("IMC (BMI)", bmin, bmax, (bmin, bmax))
 
         if "Comorbidities" in df.columns:

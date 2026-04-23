@@ -128,7 +128,7 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
 
     fig, ax = plt.subplots(figsize=(10, 5))
     # Current patient
-    ax.plot(surv_func.index, surv_func.iloc[:, 0], color="#1f77b4", lw=2.5, label="Votre profil")
+    ax.plot(surv_func.index, surv_func.iloc[:, 0], color="#1f77b4", lw=2.5, label="Profil sélectionné")
 
     for i, (_, row) in enumerate(ref_profiles.iterrows()):
         sf = cph.predict_survival_function(row.to_frame().T)
