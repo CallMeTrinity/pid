@@ -43,7 +43,6 @@ ONGLET GRAPHIQUE
 
 ONGLET SURVIE
 
-- Enlever le mot "section" sous le titre ?
 - Les graphiques ne sont pas dynamique, se sont des images : à changer si possible
 
 Kaplan Meier :
