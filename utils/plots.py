@@ -8,6 +8,42 @@ from lifelines.statistics import logrank_test, multivariate_logrank_test
 
 PALETTE = sns.color_palette("husl", 8)
 
+# Display labels and ordering for stratification variables
+GROUP_LABELS = {
+    "Smoker": {0: "Non", 1: "Oui"},
+    "Event_Observed": {0: "Censure", 1: "Deces"},
+    "Sex": {"Male": "Homme", "Female": "Femme"},
+}
+GROUP_ORDERS = {
+    "Physical_Activity": ["Low", "Moderate", "High"],
+    "Smoker": ["Non", "Oui"],
+    "Event_Observed": ["Censure", "Deces"],
+    "Sex": ["Homme", "Femme"],
+    "Treatment": ["Standard", "Experimental"],
+    "Tranche_Age": ["<50", "50-60", ">60"],
+    "Tranche_BMI": ["<18", "18-26", ">26"],
+}
+
+
+def _pretty(val, col):
+    mapping = GROUP_LABELS.get(col)
+    if mapping is not None and val in mapping:
+        return mapping[val]
+    return str(val)
+
+
+def _ordered_groups(df, col):
+    raw = df[col].dropna().unique().tolist()
+    pretty = [_pretty(v, col) for v in raw]
+    order = GROUP_ORDERS.get(col)
+    if order:
+        idx_order = [order.index(p) if p in order else len(order) for p in pretty]
+        combined = sorted(zip(raw, pretty, idx_order), key=lambda x: (x[2], x[1]))
+    else:
+        combined = sorted(zip(raw, pretty, range(len(raw))),
+                          key=lambda x: (str(x[1]),))
+    return [(r, p) for r, p, _ in combined]
+
 
 # ── Kaplan-Meier ─────────────────────────────────────────────────────────────
 
@@ -28,12 +64,12 @@ def plot_km_global(df, time_col, event_col):
 
 
 def plot_km_stratified(df, time_col, event_col, group_col):
-    groups = sorted(df[group_col].dropna().unique(), key=str)
+    ordered = _ordered_groups(df, group_col)
     fig, ax = plt.subplots(figsize=(10, 5))
     kmf = KaplanMeierFitter()
-    for i, g in enumerate(groups):
-        m = df[group_col] == g
-        kmf.fit(df.loc[m, time_col], event_observed=df.loc[m, event_col], label=str(g))
+    for i, (raw, label) in enumerate(ordered):
+        m = df[group_col] == raw
+        kmf.fit(df.loc[m, time_col], event_observed=df.loc[m, event_col], label=label)
         kmf.plot_survival_function(ax=ax, ci_show=True, color=PALETTE[i % len(PALETTE)])
     ax.set(title=f"Survie par {group_col}", xlabel="Temps (mois)", ylabel="S(t)", ylim=(0, 1.05))
     ax.legend(title=group_col)
@@ -54,14 +90,14 @@ def km_survival_table(df, time_col, event_col, points=None):
 
 
 def km_median_by_group(df, time_col, event_col, group_col):
-    groups = sorted(df[group_col].dropna().unique(), key=str)
+    ordered = _ordered_groups(df, group_col)
     kmf = KaplanMeierFitter()
     rows = []
-    for g in groups:
-        m = df[group_col] == g
+    for raw, label in ordered:
+        m = df[group_col] == raw
         kmf.fit(df.loc[m, time_col], event_observed=df.loc[m, event_col])
         rows.append({
-            "Groupe": str(g),
+            "Groupe": label,
             "n": int(m.sum()),
             "Evenements": int(df.loc[m, event_col].sum()),
             "Mediane (mois)": f"{kmf.median_survival_time_:.2f}",
@@ -99,12 +135,12 @@ def plot_na_global(df, time_col, event_col):
 
 
 def plot_na_stratified(df, time_col, event_col, group_col):
-    groups = sorted(df[group_col].dropna().unique(), key=str)
+    ordered = _ordered_groups(df, group_col)
     fig, ax = plt.subplots(figsize=(10, 5))
     naf = NelsonAalenFitter()
-    for i, g in enumerate(groups):
-        m = df[group_col] == g
-        naf.fit(df.loc[m, time_col], event_observed=df.loc[m, event_col], label=str(g))
+    for i, (raw, label) in enumerate(ordered):
+        m = df[group_col] == raw
+        naf.fit(df.loc[m, time_col], event_observed=df.loc[m, event_col], label=label)
         naf.plot_cumulative_hazard(ax=ax, ci_show=True, color=PALETTE[i % len(PALETTE)])
     ax.set(title=f"Risque cumule par {group_col}", xlabel="Temps (mois)", ylabel="H(t)")
     ax.legend(title=group_col)

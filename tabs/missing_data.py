@@ -52,7 +52,7 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
             st.markdown("""
             <div class="info-card">
                 <h4>Dataset complet</h4>
-                <p>Aucune valeur manquante a afficher. Le jeu de donnees est pret pour l'analyse.</p>
+                <p>Aucune valeur manquante a afficher. Le jeu de donnees valide pour l'analyse.</p>
             </div>
             """, unsafe_allow_html=True)
 

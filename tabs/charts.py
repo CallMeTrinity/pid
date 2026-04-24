@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 
 PLOTLY_LAYOUT = dict(
     template="plotly_dark",
@@ -10,7 +9,46 @@ PLOTLY_LAYOUT = dict(
     font=dict(family="Inter"),
 )
 
-COLORS = ["#6C63FF", "#3B82F6", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#EC4899", "#8B5CF6"]
+# Coherent palette across the app
+COLORS = ["#3B82F6", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"]
+
+LABEL_MAPS = {
+    "Smoker": {0: "Non", 1: "Oui"},
+    "Event_Observed": {0: "Censure", 1: "Deces"},
+    "Sex": {"Male": "Homme", "Female": "Femme"},
+}
+
+CATEGORY_ORDERS = {
+    "Physical_Activity": ["Low", "Moderate", "High"],
+    "Tranche_Age": ["<50", "50-60", ">60"],
+    "Tranche_BMI": ["<18", "18-26", ">26"],
+    "Treatment": ["Standard", "Experimental"],
+    "Smoker": ["Non", "Oui"],
+    "Event_Observed": ["Censure", "Deces"],
+    "Sex": ["Homme", "Femme"],
+}
+
+
+def _pretty(df: pd.DataFrame, col: str) -> pd.Series:
+    s = df[col]
+    if col in LABEL_MAPS:
+        return s.map(LABEL_MAPS[col]).fillna(s.astype(str))
+    return s.astype(str)
+
+
+def _ordered_counts(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    disp = _pretty(df, col)
+    counts = disp.value_counts()
+    total = counts.sum()
+    order = CATEGORY_ORDERS.get(col)
+    idx = list(counts.index)
+    if order:
+        idx = [o for o in order if o in idx] + [o for o in idx if o not in order]
+    return pd.DataFrame({
+        col: idx,
+        "Effectif": [int(counts[i]) for i in idx],
+        "%": [round(counts[i] / total * 100, 1) for i in idx],
+    })
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
@@ -25,11 +63,13 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             title=f"Histogramme — {time_col}",
             color_discrete_sequence=[COLORS[0]],
             opacity=0.85,
+            histnorm="percent",
+            labels={"percent": "%"},
         )
         med = df[time_col].median()
         fig.add_vline(x=med, line_dash="dash", line_color="#EF4444",
                       annotation_text=f"Mediane: {med:.1f}")
-        fig.update_layout(**PLOTLY_LAYOUT)
+        fig.update_layout(**PLOTLY_LAYOUT, yaxis_title="% des patients")
         st.plotly_chart(fig, use_container_width=True)
     with col2:
         fig = px.box(
@@ -39,78 +79,90 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         fig.update_layout(**PLOTLY_LAYOUT)
         st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown(
+        "La distribution de la variable Time_to_Event est fortement asymetrique a droite : "
+        "la majorite des evenements surviennent dans les premiers mois (entre 0 et environ 50), "
+        "tandis que quelques patients presentent des durees de survie beaucoup plus longues."
+    )
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    # ── Qualitative variables ─────────────────────────────────────────────────
+    # ── Qualitative variables (bar charts in %) ───────────────────────────────
     st.markdown("#### Variables qualitatives")
 
-    cat_map = {
-        "Sex": "Sexe", "Treatment": "Traitement",
-        "Physical_Activity": "Activite physique",
-    }
-    cat_cols = [c for c in cat_map if c in df.columns]
+    quali_cols = [c for c in ["Sex", "Treatment", "Physical_Activity",
+                              "Smoker", "Event_Observed"] if c in df.columns]
 
-    if cat_cols:
-        cols = st.columns(len(cat_cols))
-        for widget, col_name in zip(cols, cat_cols):
-            counts = df[col_name].value_counts().reset_index()
-            counts.columns = [cat_map[col_name], "Effectif"]
-            fig = px.bar(
-                counts, x=cat_map[col_name], y="Effectif",
-                color=cat_map[col_name], text="Effectif",
-                title=cat_map[col_name],
-                color_discrete_sequence=COLORS,
-            )
-            fig.update_traces(textposition="outside")
-            fig.update_layout(showlegend=False, **PLOTLY_LAYOUT)
-            widget.plotly_chart(fig, use_container_width=True)
+    if quali_cols:
+        rows = [quali_cols[i:i+3] for i in range(0, len(quali_cols), 3)]
+        for row in rows:
+            cols = st.columns(len(row))
+            for widget, col_name in zip(cols, row):
+                data = _ordered_counts(df, col_name)
+                fig = px.bar(
+                    data, x=col_name, y="%", text="%",
+                    title=col_name,
+                    color_discrete_sequence=[COLORS[quali_cols.index(col_name) % len(COLORS)]],
+                )
+                fig.update_traces(texttemplate="%{text:.1f}%", textposition="outside")
+                fig.update_layout(
+                    showlegend=False, **PLOTLY_LAYOUT,
+                    yaxis_title="% des patients",
+                    xaxis_title="",
+                )
+                widget.plotly_chart(fig, use_container_width=True)
 
-    # Binary variables as donut charts
-    bin_map = {"Smoker": ("Fumeur", {0: "Non", 1: "Oui"}),
-               "Event_Observed": ("Evenement", {0: "Censure", 1: "Deces"})}
-    bin_cols = [c for c in bin_map if c in df.columns]
-
-    if bin_cols:
-        cols = st.columns(len(bin_cols))
-        for widget, col_name in zip(cols, bin_cols):
-            label, mapping = bin_map[col_name]
-            counts = df[col_name].value_counts().reset_index()
-            counts.columns = [label, "Effectif"]
-            counts[label] = counts[label].map(mapping)
-            fig = px.pie(
-                counts, names=label, values="Effectif",
-                title=label,
-                color_discrete_sequence=COLORS,
-                hole=0.35,
-            )
-            fig.update_layout(**PLOTLY_LAYOUT)
-            widget.plotly_chart(fig, use_container_width=True)
+        # Interpretation qualitative
+        lines = []
+        for c in quali_cols:
+            data = _ordered_counts(df, c)
+            top = data.iloc[data["%"].idxmax()]
+            lines.append(f"- **{c}** : la modalite dominante est *{top[c]}* "
+                         f"({top['%']:.1f}% des patients).")
+        st.markdown("**Interpretation :**\n" + "\n".join(lines))
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
-    # ── Quantitative variables ────────────────────────────────────────────────
+    # ── Quantitative variables with tranches highlighted ──────────────────────
     st.markdown("#### Variables quantitatives")
 
-    quant_map = [("Age", "Age (annees)"), ("BMI", "IMC"), ("Comorbidities", "Comorbidites")]
-    quant_cols = [(c, l) for c, l in quant_map if c in df.columns]
+    quant_map = [("Age", "Age (annees)", [0, 50, 60, 120], ["<50", "50-60", ">60"]),
+                 ("BMI", "IMC", [0, 18, 26, 100], ["<18", "18-26", ">26"]),
+                 ("Comorbidities", "Comorbidites", None, None)]
+    quant_cols = [m for m in quant_map if m[0] in df.columns]
 
     if quant_cols:
         cols = st.columns(len(quant_cols))
-        for widget, (col_name, label) in zip(cols, quant_cols):
+        for widget, (col_name, label, bins, tranche_labels) in zip(cols, quant_cols):
             fig = px.histogram(
                 df, x=col_name, nbins=30, title=label,
                 labels={col_name: label},
                 color_discrete_sequence=[COLORS[2]],
                 opacity=0.85,
+                histnorm="percent",
             )
             mean_v = df[col_name].mean()
             med_v = df[col_name].median()
-            fig.add_vline(x=mean_v, line_dash="dash", line_color="#3B82F6",
-                          annotation_text=f"Moy: {mean_v:.1f}")
             fig.add_vline(x=med_v, line_dash="dot", line_color="#EF4444",
                           annotation_text=f"Med: {med_v:.1f}")
-            fig.update_layout(**PLOTLY_LAYOUT)
+            # Draw tranche borders
+            if bins is not None:
+                for b, lbl in zip(bins[1:-1], tranche_labels[:-1]):
+                    fig.add_vline(x=b, line_dash="dash",
+                                  line_color="rgba(255,255,255,0.35)",
+                                  annotation_text=f"< {lbl}",
+                                  annotation_position="top")
+            fig.update_layout(**PLOTLY_LAYOUT, yaxis_title="% des patients")
             widget.plotly_chart(fig, use_container_width=True)
+
+        # Interpretation
+        interp_lines = []
+        for col_name, label, bins, tranche_labels in quant_cols:
+            s = df[col_name]
+            interp_lines.append(
+                f"- **{label}** : moyenne {s.mean():.1f}, mediane {s.median():.1f} "
+                f"(min {s.min():.1f}, max {s.max():.1f})."
+            )
+        st.markdown("**Interpretation :**\n" + "\n".join(interp_lines))
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
@@ -130,13 +182,59 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     with col2:
         color_var = st.selectbox("Colorier par", cat_options, key="chart_color")
 
+    df_plot = df.copy()
+    if color_var in LABEL_MAPS:
+        df_plot[color_var] = df_plot[color_var].map(LABEL_MAPS[color_var]).fillna(df_plot[color_var].astype(str))
+    else:
+        df_plot[color_var] = df_plot[color_var].astype(str)
+
+    category_order = None
+    if color_var in CATEGORY_ORDERS:
+        present = df_plot[color_var].unique().tolist()
+        category_order = [c for c in CATEGORY_ORDERS[color_var] if c in present]
+
     fig = px.scatter(
-        df.assign(**{color_var: df[color_var].astype(str)}),
+        df_plot,
         x=x_var, y=time_col, color=color_var,
         title=f"{x_var} vs {time_col}",
         labels={time_col: "Temps de suivi (mois)"},
         opacity=.6,
         color_discrete_sequence=COLORS,
+        category_orders={color_var: category_order} if category_order else None,
     )
     fig.update_layout(**PLOTLY_LAYOUT)
     st.plotly_chart(fig, use_container_width=True)
+
+    # Dynamic interpretation for the scatter
+    try:
+        corr = df[[x_var, time_col]].corr().iloc[0, 1]
+    except Exception:
+        corr = None
+
+    parts = [f"Ce nuage de points croise **{x_var}** (axe X) avec la duree de suivi "
+             f"**{time_col}** (axe Y), colore par **{color_var}**."]
+    if corr is not None:
+        if abs(corr) < 0.1:
+            strength = "tres faible, quasi inexistante"
+        elif abs(corr) < 0.3:
+            strength = "faible"
+        elif abs(corr) < 0.5:
+            strength = "moderee"
+        else:
+            strength = "forte"
+        direction = "positive" if corr > 0 else "negative"
+        parts.append(
+            f"La correlation lineaire entre {x_var} et {time_col} est **{strength}** "
+            f"({direction}, r = {corr:.2f})."
+        )
+
+    # Group median comparison
+    grp = df_plot.groupby(color_var)[time_col].median().sort_values(ascending=False)
+    if len(grp) >= 2:
+        best, worst = grp.index[0], grp.index[-1]
+        parts.append(
+            f"Le groupe **{best}** presente la mediane de suivi la plus longue "
+            f"({grp.iloc[0]:.1f} mois), contre **{worst}** qui a la plus courte "
+            f"({grp.iloc[-1]:.1f} mois)."
+        )
+    st.markdown(" ".join(parts))

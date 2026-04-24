@@ -12,20 +12,20 @@ from utils.plots import (
 GROUP_OPTIONS = {
     "Sexe": "Sex",
     "Traitement": "Treatment",
-    "Activite physique": "Physical_Activity",
+    "Activité physique": "Physical_Activity",
     "Fumeur": "Smoker",
-    "Tranche d'age": "Tranche_Age",
+    "Tranche d'âge": "Tranche_Age",
     "Tranche IMC": "Tranche_BMI",
 }
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
-    st.subheader("Probabilites de survie et courbes de survie")
+    st.subheader("Probabilités de survie et courbes de survie")
 
     available_groups = {k: v for k, v in GROUP_OPTIONS.items() if v in df.columns}
 
     section = st.radio(
-        "Section", ["Kaplan-Meier", "Nelson-Aalen", "Tests de comparaison"],
+        "Section", ["Kaplan-Meier", "Nelson-Aalen"],
         horizontal=True, key="surv_section",
     )
 
@@ -35,10 +35,12 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     if section == "Kaplan-Meier":
         st.markdown("---")
         st.markdown("### Estimateur de Kaplan-Meier")
+        st.markdown("L’estimateur de Kaplan-Meier permet d’estimer la probabilité de survie des patients au cours du temps, en tenant compte du fait que certains patients peuvent être censurés (perdus de vue ou encore en vie à la fin de l’étude).")
         st.latex(r"\hat{S}(t) = \prod_{t_i \le t} \left(1 - \frac{d_i}{n_i}\right)")
 
         # Global curve
         st.markdown("#### Courbe de survie globale")
+        st.markdown("La courbe de Kaplan-Meier montre l’évolution de la probabilité de survie des patients au cours du temps.")
         fig, kmf_global = plot_km_global(df, time_col, event_col)
         st.pyplot(fig)
         plt.close(fig)
@@ -56,7 +58,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             f"La survie mediane est estimee a **{median_surv:.1f} mois**, ce qui signifie "
             f"que 50% des patients survivent au-dela de cette duree. "
             f"A 12 mois, **{s12*100:.1f}%** des patients sont encore en vie ; "
-            f"a 36 mois, cette proportion descend a **{s36*100:.1f}%**. "
+            f"a 36 mois, cette proportion descend a **{s36*100:.1f}%**. Ce qui traduit une diminution progressive de la probabilité de survie au cours du temps."
         )
         if s12 > 0.9:
             st.markdown(
@@ -71,6 +73,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
         # Survival table
         st.markdown("#### Tableau des probabilites de survie")
+        st.markdown("Le tableau des probabilités de survie permet de détailler l’évolution de la survie des patients à différents instants du suivi.")
         table, _ = km_survival_table(df, time_col, event_col, [12, 24, 36, 60, 100])
         st.dataframe(table, use_container_width=True, hide_index=True)
 
@@ -86,7 +89,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
         # Stratified
         st.markdown("---")
-        st.markdown("#### Courbes de survie stratifiees")
+        st.markdown("#### Courbes de survie stratifiées")
         group_label = st.selectbox(
             "Variable de stratification", list(available_groups.keys()), key="km_group"
         )
@@ -106,6 +109,11 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             # Log-rank
             r = logrank_result(df, time_col, event_col, group_col)
             st.markdown("**Test du Log-Rank**")
+            st.info("""
+            - H0 : les fonctions de survie sont identiques
+            - H1 : au moins un groupe differe
+            - Rejet de H0 si **p < 0.05**
+            """)
             st.metric("Statistique", f"{r['stat']:.4f}")
             st.metric("p-value", f"{r['p']:.4f}")
             if r["p"] < 0.05:
@@ -134,8 +142,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         else:
             interp += (
                 f"Cependant, le test du Log-Rank indique que cette difference **n'est pas "
-                f"statistiquement significative** (p = {r['p']:.4f}). Les ecarts observes "
-                f"pourraient etre dus au hasard."
+                f"statistiquement significative** (p = {r['p']:.4f}). La variable **{group_label}** ne semble pas avoir un impact sur la survie des patients."
+                f" Cela signifie que la différence observée entre les groupes peut être due au hasard."
             )
         st.markdown(interp)
 
@@ -145,11 +153,13 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     elif section == "Nelson-Aalen":
         st.markdown("---")
         st.markdown("### Estimateur de Nelson-Aalen")
+        st.markdown("L’estimateur de Nelson-Aalen permet d’estimer le risque cumulé de survenue de l’événement (ici le décès) au cours du temps.")
         st.latex(r"\hat{H}(t) = \sum_{t_i \le t} \frac{d_i}{n_i}")
         st.markdown("Relation avec la survie : $S(t) \\approx e^{-H(t)}$")
 
         # Global
         st.markdown("#### Risque cumule global")
+        st.markdown("Cette courbe permet de visualiser l’accumulation du risque de décès au cours du temps.")
         fig, naf_global = plot_na_global(df, time_col, event_col)
         st.pyplot(fig)
         plt.close(fig)
@@ -167,9 +177,9 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         st.markdown(
             f"Le risque cumule atteint **{h12:.3f}** a 12 mois et **{h36:.3f}** a 36 mois "
             f"(multiplication par {ratio_36_12:.1f}). "
-            f"{'Le risque augmente de facon reguliere, suggerant un taux de risque relativement constant.' if 1.5 < ratio_36_12 < 4.5 else ''}"
+            f"{"La courbe croît de façon approximativement linéaire, ce qui indique que le taux de risque instantané de deces reste relativement stable dans le temps. Le risque d'événement à chaque instant ne s'accélère ni ne diminue au fil du suivi." if 1.5 < ratio_36_12 < 4.5 else ''}"
             f"{'Le risque accelere fortement apres la premiere annee, ce qui peut indiquer une aggravation progressive de la maladie.' if ratio_36_12 >= 4.5 else ''}"
-            f"{'Le risque cumule progresse lentement, suggerant une population a faible risque dans cette periode.' if ratio_36_12 <= 1.5 else ''}"
+            f"{'Le risque cumulé progresse lentement, suggerant une population a faible risque dans cette periode.' if ratio_36_12 <= 1.5 else ''}"
         )
 
         # Estimation interactive
@@ -200,7 +210,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             f"A **{t_input:.0f} mois**, la probabilite de survie estimee par Kaplan-Meier est de "
             f"**{s_t_km*100:.2f}%**, tandis que l'approximation via Nelson-Aalen donne "
             f"**{s_t_na*100:.2f}%** (ecart de {diff_pct:.2f} points). "
-            f"{'Les deux estimations sont tres proches, ce qui est attendu pour des echantillons de taille suffisante.' if diff_pct < 2 else 'L ecart entre les deux methodes est notable, ce qui peut arriver avec des echantillons petits ou des taux de censure eleves.'}"
+            f"{'Les deux estimations sont tres proches, ce qui est attendu pour des echantillons de taille suffisante, ce qui confirme la cohérence des estimations.' if diff_pct < 2 else 'L ecart entre les deux methodes est notable, ce qui peut arriver avec des echantillons petits ou des taux de censure eleves.'}"
         )
 
         # Stratified
@@ -214,89 +224,26 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         st.pyplot(fig)
         plt.close(fig)
 
+        st.markdown("Les différences entre les courbes indiquent que certains groupes accumulent un risque de décès plus rapidement que d’autres.")
+
         # Interpretation
-        with st.expander("Interpretation"):
+        st.markdown("---")
+        with st.expander("Interprétation de la fonction de risque cumulée"):
             st.markdown("""
-**Que represente la fonction de risque cumulee H(t) ?**
+**Que représente la fonction de risque cumulée H(t) ?**
 
-H(t) mesure le risque total accumule jusqu'au temps t. Elle resume la quantite
-totale de risque qu'un individu a supporte. Contrairement a S(t), H(t) est une
-fonction croissante.
+La fonction de risque cumulée H(t) mesure le risque total de décès accumulé 
+jusqu’au temps t. Elle représente la quantité de risque qu’un individu a cumulée 
+au cours du temps. Contrairement à la probabilité de survie S(t), cette fonction 
+est croissante.
 
-**Comment evolue le risque cumulatif avec le temps ?**
+**Comment évolue le risque cumulatif avec le temps ?**
 
-- En debut de suivi, H(t) croit rapidement : le taux de risque instantane
-  est eleve (beaucoup d'evenements).
-- Le rythme ralentit ensuite : effet de selection — les individus les plus
-  fragiles disparaissent tot, laissant une population plus resistante.
-- Une courbe H(t) lineaire indiquerait un risque constant (modele exponentiel).
+On observe que le risque cumulé de décès augmente avec le temps, ce qui est attendu 
+puisque les événements s’accumulent au fil du suivi. Au début, la courbe augmente 
+relativement rapidement, ce qui indique un nombre important d'évènements (décès). 
+Ensuite, la croissance devient plus régulière, suggérant que le risque instantané de 
+décès reste globalement stable dans le temps. Si la courbe de risque cumulée H(t) est 
+approximativement linéaire, cela suggère que le risque instantané est constant au 
+cours du temps, ce qui correspond à un modèle exponentiel.
 """)
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # TESTS DE COMPARAISON
-    # ══════════════════════════════════════════════════════════════════════════
-    else:
-        st.markdown("---")
-        st.markdown("### Tests de comparaison des fonctions de survie (Log-Rank)")
-        st.markdown("""
-Le test du **Log-Rank** (Mantel-Haenszel) compare les fonctions de survie de
-deux ou plusieurs groupes :
-- H0 : les fonctions de survie sont identiques
-- H1 : au moins un groupe differe
-- Rejet de H0 si **p < 0.05**
-""")
-
-        results_rows = []
-        for label, col in available_groups.items():
-            if col in df.columns and df[col].nunique() >= 2:
-                r = logrank_result(df, time_col, event_col, col)
-                results_rows.append({
-                    "Variable": label,
-                    "Groupes": df[col].nunique(),
-                    "Test": r["test"],
-                    "Statistique": f"{r['stat']:.4f}",
-                    "p-value": f"{r['p']:.4f}",
-                    "Significatif": "Oui" if r["p"] < 0.05 else "Non",
-                })
-
-        if results_rows:
-            st.dataframe(pd.DataFrame(results_rows), use_container_width=True, hide_index=True)
-
-            sig_vars = [r["Variable"] for r in results_rows if r["Significatif"] == "Oui"]
-            nonsig_vars = [r["Variable"] for r in results_rows if r["Significatif"] == "Non"]
-            if sig_vars:
-                st.markdown(
-                    f"Les variables **{', '.join(sig_vars)}** montrent une difference "
-                    f"statistiquement significative (p < 0.05) entre les groupes. "
-                    f"Ces facteurs ont un impact mesurable sur la survie des patients."
-                )
-            if nonsig_vars:
-                st.markdown(
-                    f"En revanche, les variables **{', '.join(nonsig_vars)}** ne montrent "
-                    f"pas de difference significative. L'effet de ces facteurs sur la survie "
-                    f"n'est pas etabli avec les donnees disponibles."
-                )
-
-        st.markdown("---")
-        st.markdown("#### Comparaison detaillee")
-        group_label = st.selectbox(
-            "Choisir une variable", list(available_groups.keys()), key="lr_group"
-        )
-        group_col = available_groups[group_label]
-
-        col1, col2 = st.columns(2)
-        with col1:
-            fig = plot_km_stratified(df, time_col, event_col, group_col)
-            st.pyplot(fig)
-            plt.close(fig)
-        with col2:
-            medians = km_median_by_group(df, time_col, event_col, group_col)
-            st.dataframe(medians, use_container_width=True, hide_index=True)
-
-            r = logrank_result(df, time_col, event_col, group_col)
-            st.metric("Statistique du test", f"{r['stat']:.4f}")
-            st.metric("p-value", f"{r['p']:.6f}")
-            if r["p"] < 0.05:
-                st.success(f"Les courbes de survie different significativement selon **{group_label}**.")
-            else:
-                st.warning(f"Pas de difference significative selon **{group_label}**.")

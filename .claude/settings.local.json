@@ -4,7 +4,9 @@
       "Bash(python3:*)",
       "Bash(pip install:*)",
       "Bash(python:*)",
-      "Bash(file:*)"
+      "Bash(file:*)",
+      "Bash(streamlit run *)",
+      "Bash(tee /tmp/streamlit.log)"
     ]
   }
 }
