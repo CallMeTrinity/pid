@@ -325,11 +325,8 @@ tab_names = [
     "Survie",
     "Prediction",
     "Modele de Cox",
-    "Comorbidites",
-    "Avance",
     "Comparateur",
-    "Export",
-    "A propos",
+    "Plus d'infos",
 ]
 
 tabs = st.tabs(tab_names)
@@ -349,12 +346,15 @@ with tabs[5]:
 with tabs[6]:
     tab_cox(df_filtered, time_col, event_col)
 with tabs[7]:
-    tab_comorbidities(df_filtered, time_col, event_col)
-with tabs[8]:
-    tab_advanced(df_filtered, time_col, event_col)
-with tabs[9]:
     tab_comparator(df_filtered, time_col, event_col)
-with tabs[10]:
-    tab_export(df_filtered, time_col, event_col)
-with tabs[11]:
-    tab_about()
+with tabs[8]:
+    sub_names = ["Comorbidites", "Avance", "Export", "A propos"]
+    sub_tabs = st.tabs(sub_names)
+    with sub_tabs[0]:
+        tab_comorbidities(df_filtered, time_col, event_col)
+    with sub_tabs[1]:
+        tab_advanced(df_filtered, time_col, event_col)
+    with sub_tabs[2]:
+        tab_export(df_filtered, time_col, event_col)
+    with sub_tabs[3]:
+        tab_about()
