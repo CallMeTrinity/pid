@@ -188,7 +188,6 @@ with st.sidebar:
     </div>
     """, unsafe_allow_html=True)
 
-    st.caption("Mode clair/sombre : menu ≡ en haut a droite → Settings → Choose app theme")
 
     # ── Data loading ──────────────────────────────────────────────────────────
     with st.expander("Chargement des donnees", expanded=True):
