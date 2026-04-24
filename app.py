@@ -55,15 +55,10 @@ html, body {
 
 /* ── Metric cards ───────────────────────────────────────────── */
 [data-testid="stMetric"] {
-    background: linear-gradient(135deg, rgba(108,99,255,0.08), rgba(59,130,246,0.08));
-    border: 1px solid rgba(108,99,255,0.2);
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(6,182,212,0.08));
+    border: 1px solid rgba(59,130,246,0.2);
     border-radius: 12px;
     padding: 1rem 1.2rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-[data-testid="stMetric"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(108,99,255,0.15);
 }
 [data-testid="stMetricLabel"] {
     font-size: 0.8rem !important;
@@ -121,20 +116,16 @@ section[data-testid="stSidebar"] [data-testid="stMetric"] {
 .stButton > button {
     border-radius: 8px;
     font-weight: 600;
-    transition: all 0.2s;
-}
-.stButton > button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 15px rgba(108,99,255,0.3);
 }
 
 /* ── Section dividers ────────────────────────────────────────── */
 .section-divider {
-    height: 3px;
-    background: linear-gradient(90deg, #6C63FF, #3B82F6, #06B6D4, transparent);
+    height: 2px;
+    background: linear-gradient(90deg, #3B82F6, #06B6D4, transparent);
     border: none;
     border-radius: 2px;
     margin: 1.5rem 0;
+    opacity: 0.6;
 }
 
 /* ── Info cards ──────────────────────────────────────────────── */
@@ -159,13 +150,13 @@ section[data-testid="stSidebar"] [data-testid="stMetric"] {
 .sidebar-header {
     text-align: center;
     padding: 0.5rem 0 1rem 0;
-    border-bottom: 1px solid rgba(108,99,255,0.2);
+    border-bottom: 1px solid rgba(59,130,246,0.2);
     margin-bottom: 1rem;
 }
 .sidebar-header h2 {
     font-size: 1.1rem;
     margin: 0;
-    background: linear-gradient(135deg, #6C63FF, #06B6D4);
+    background: linear-gradient(135deg, #3B82F6, #06B6D4);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
@@ -196,6 +187,8 @@ with st.sidebar:
         <h2>SurvivalLab</h2>
     </div>
     """, unsafe_allow_html=True)
+
+    st.caption("Mode clair/sombre : menu ≡ en haut a droite → Settings → Choose app theme")
 
     # ── Data loading ──────────────────────────────────────────────────────────
     with st.expander("Chargement des donnees", expanded=True):
@@ -244,37 +237,57 @@ with st.sidebar:
     df = process_data(df_raw, time_col, event_col)
 
     # ── Filters ───────────────────────────────────────────────────────────────
+    # Handle reset before widgets are instantiated
+    if st.session_state.pop("_reset_filters", False):
+        for k in ("flt_age", "flt_sex", "flt_smoker", "flt_treatment",
+                  "flt_activity", "flt_bmi", "flt_comorb"):
+            st.session_state.pop(k, None)
+
     with st.expander("Filtres", expanded=True):
+        if st.button("Reinitialiser les filtres", use_container_width=True, key="reset_filters_btn"):
+            st.session_state["_reset_filters"] = True
+            st.rerun()
+
         filters = {}
+        ACTIVITY_ORDER = ["Low", "Moderate", "High"]
 
         if "Age" in df.columns:
             age_min, age_max = int(df["Age"].min()), int(df["Age"].max())
-            filters["Age"] = st.slider("Age", age_min, age_max, (age_min, age_max))
+            filters["Age"] = st.slider("Age", age_min, age_max,
+                                       (age_min, age_max), key="flt_age")
 
         if "Sex" in df.columns:
             opts = sorted(df["Sex"].dropna().unique().tolist())
-            filters["Sex"] = st.multiselect("Sexe", opts, default=opts)
+            filters["Sex"] = st.multiselect("Sexe", opts, default=opts, key="flt_sex")
 
         if "Smoker" in df.columns:
             opts = sorted(df["Smoker"].dropna().unique().tolist())
-            filters["Smoker"] = st.multiselect("Fumeur", opts, default=opts,
-                                               format_func=lambda x: f"{'Oui' if x == 1 else 'Non'}")
+            filters["Smoker"] = st.multiselect(
+                "Fumeur", opts, default=opts, key="flt_smoker",
+                format_func=lambda x: "Oui" if x == 1 else "Non",
+            )
 
         if "Treatment" in df.columns:
             opts = sorted(df["Treatment"].dropna().unique().tolist())
-            filters["Treatment"] = st.multiselect("Traitement", opts, default=opts)
+            filters["Treatment"] = st.multiselect(
+                "Traitement", opts, default=opts, key="flt_treatment")
 
         if "Physical_Activity" in df.columns:
-            opts = sorted(df["Physical_Activity"].dropna().unique().tolist())
-            filters["Physical_Activity"] = st.multiselect("Activite physique", opts, default=opts)
+            raw_opts = df["Physical_Activity"].dropna().unique().tolist()
+            opts = [a for a in ACTIVITY_ORDER if a in raw_opts] + \
+                   [o for o in raw_opts if o not in ACTIVITY_ORDER]
+            filters["Physical_Activity"] = st.multiselect(
+                "Activite physique", opts, default=opts, key="flt_activity")
 
         if "BMI" in df.columns:
             bmin, bmax = int(df["BMI"].min()), int(df["BMI"].max())
-            filters["BMI"] = st.slider("IMC (BMI)", bmin, bmax, (bmin, bmax))
+            filters["BMI"] = st.slider("IMC (BMI)", bmin, bmax,
+                                       (bmin, bmax), key="flt_bmi")
 
         if "Comorbidities" in df.columns:
             cmin, cmax = int(df["Comorbidities"].min()), int(df["Comorbidities"].max())
-            filters["Comorbidities"] = st.slider("Comorbidites", cmin, cmax, (cmin, cmax))
+            filters["Comorbidities"] = st.slider(
+                "Comorbidites", cmin, cmax, (cmin, cmax), key="flt_comorb")
 
     # Apply filters
     df_filtered = apply_filters(df, filters)
