@@ -14,7 +14,7 @@ COLORS = ["#3B82F6", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC
 
 LABEL_MAPS = {
     "Smoker": {0: "Non", 1: "Oui"},
-    "Event_Observed": {0: "Censure", 1: "Deces"},
+    "Event_Observed": {0: "Censuré", 1: "Décès"},
     "Sex": {"Male": "Homme", "Female": "Femme"},
 }
 
@@ -24,7 +24,7 @@ CATEGORY_ORDERS = {
     "Tranche_BMI": ["<18", "18-26", ">26"],
     "Treatment": ["Standard", "Experimental"],
     "Smoker": ["Non", "Oui"],
-    "Event_Observed": ["Censure", "Deces"],
+    "Event_Observed": ["Censuré", "Décès"],
     "Sex": ["Homme", "Femme"],
 }
 
@@ -60,7 +60,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     with col1:
         fig = px.histogram(
             df, x=time_col, nbins=40,
-            title=f"Histogramme — {time_col}",
+            title=f"Histogramme - {time_col}",
             color_discrete_sequence=[COLORS[0]],
             opacity=0.85,
             histnorm="percent",
@@ -68,21 +68,21 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         )
         med = df[time_col].median()
         fig.add_vline(x=med, line_dash="dash", line_color="#EF4444",
-                      annotation_text=f"Mediane: {med:.1f}")
+                      annotation_text=f"Médiane: {med:.1f}")
         fig.update_layout(**PLOTLY_LAYOUT, yaxis_title="% des patients")
         st.plotly_chart(fig, use_container_width=True)
     with col2:
         fig = px.box(
-            df, y=time_col, title=f"Boxplot — {time_col}",
+            df, y=time_col, title=f"Boxplot - {time_col}",
             color_discrete_sequence=[COLORS[1]],
         )
         fig.update_layout(**PLOTLY_LAYOUT)
         st.plotly_chart(fig, use_container_width=True)
 
     st.markdown(
-        "La distribution de la variable Time_to_Event est fortement asymetrique a droite : "
-        "la majorite des evenements surviennent dans les premiers mois (entre 0 et environ 50), "
-        "tandis que quelques patients presentent des durees de survie beaucoup plus longues."
+        "La distribution de la variable Time_to_Event est fortement asymétrique à droite : "
+        "la majorité des événements surviennent dans les premiers mois (entre 0 et environ 50), "
+        "tandis que quelques patients présentent des durées de survie beaucoup plus longues."
     )
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
@@ -116,18 +116,18 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         for c in quali_cols:
             data = _ordered_counts(df, c)
             top = data.iloc[data["%"].idxmax()]
-            lines.append(f"- **{c}** : la modalite dominante est *{top[c]}* "
+            lines.append(f"- **{c}** : la modalité dominante est *{top[c]}* "
                          f"({top['%']:.1f}% des patients).")
-        st.markdown("**Interpretation :**\n" + "\n".join(lines))
+        st.markdown("**Interprétation :**\n" + "\n".join(lines))
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Quantitative variables with tranches highlighted ──────────────────────
     st.markdown("#### Variables quantitatives")
 
-    quant_map = [("Age", "Age (annees)", [0, 50, 60, 120], ["<50", "50-60", ">60"]),
+    quant_map = [("Age", "Âge (années)", [0, 50, 60, 120], ["<50", "50-60", ">60"]),
                  ("BMI", "IMC", [0, 18, 26, 100], ["<18", "18-26", ">26"]),
-                 ("Comorbidities", "Comorbidites", None, None)]
+                 ("Comorbidities", "Comorbidités", None, None)]
     quant_cols = [m for m in quant_map if m[0] in df.columns]
 
     if quant_cols:
@@ -159,15 +159,15 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         for col_name, label, bins, tranche_labels in quant_cols:
             s = df[col_name]
             interp_lines.append(
-                f"- **{label}** : moyenne {s.mean():.1f}, mediane {s.median():.1f} "
+                f"- **{label}** : moyenne {s.mean():.1f}, médiane {s.median():.1f} "
                 f"(min {s.min():.1f}, max {s.max():.1f})."
             )
-        st.markdown("**Interpretation :**\n" + "\n".join(interp_lines))
+        st.markdown("**Interprétation :**\n" + "\n".join(interp_lines))
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 
     # ── Exploration croisee ───────────────────────────────────────────────────
-    st.markdown("#### Exploration croisee")
+    st.markdown("#### Exploration croisée")
 
     num_options = [c for c in df.select_dtypes(include="number").columns if c != event_col]
     cat_options = ["Sex", "Treatment", "Physical_Activity", "Smoker",
@@ -211,20 +211,20 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     except Exception:
         corr = None
 
-    parts = [f"Ce nuage de points croise **{x_var}** (axe X) avec la duree de suivi "
-             f"**{time_col}** (axe Y), colore par **{color_var}**."]
+    parts = [f"Ce nuage de points croisé **{x_var}** (axe X) avec la durée de suivi "
+             f"**{time_col}** (axe Y), coloré par **{color_var}**."]
     if corr is not None:
         if abs(corr) < 0.1:
-            strength = "tres faible, quasi inexistante"
+            strength = "très faible, quasi inexistante"
         elif abs(corr) < 0.3:
             strength = "faible"
         elif abs(corr) < 0.5:
-            strength = "moderee"
+            strength = "modérée"
         else:
             strength = "forte"
-        direction = "positive" if corr > 0 else "negative"
+        direction = "positive" if corr > 0 else "négative"
         parts.append(
-            f"La correlation lineaire entre {x_var} et {time_col} est **{strength}** "
+            f"La corrélation linéaire entre {x_var} et {time_col} est **{strength}** "
             f"({direction}, r = {corr:.2f})."
         )
 
@@ -233,7 +233,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     if len(grp) >= 2:
         best, worst = grp.index[0], grp.index[-1]
         parts.append(
-            f"Le groupe **{best}** presente la mediane de suivi la plus longue "
+            f"Le groupe **{best}** présente la médiane de suivi la plus longue "
             f"({grp.iloc[0]:.1f} mois), contre **{worst}** qui a la plus courte "
             f"({grp.iloc[-1]:.1f} mois)."
         )

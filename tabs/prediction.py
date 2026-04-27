@@ -7,10 +7,10 @@ import hashlib
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
-    st.subheader("Prediction de survie d'un individu")
+    st.subheader("Prédiction de survie d'un individu")
     st.markdown("""
-A partir du modele de Cox ajuste sur les donnees, saisissez les
-caracteristiques d'un patient pour visualiser sa courbe de survie predite.
+À partir du modèle de Cox ajusté sur les données, saisissez les
+caractéristiques d'un patient pour visualiser sa courbe de survie prédite.
 """)
 
     # Fit model on full data (cached)
@@ -29,7 +29,7 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
         smoker = st.selectbox("Fumeur", ["Non", "Oui"], key="pred_smoker")
         treatment = st.selectbox("Traitement", ["Standard", "Experimental"], key="pred_treat")
     with col3:
-        activity = st.selectbox("Activite physique", ["Low", "Moderate", "High"], key="pred_act")
+        activity = st.selectbox("Activité physique", ["Low", "Moderate", "High"], key="pred_act")
 
     profile = pd.DataFrame([{
         "Age": age,
@@ -46,7 +46,7 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
 
     # ── Prediction ────────────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("#### Courbe de survie predite")
+    st.markdown("#### Courbe de survie prédite")
 
     surv_func = cph.predict_survival_function(profile)
 
@@ -55,7 +55,7 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
     ax.fill_between(surv_func.index, surv_func.iloc[:, 0], alpha=.15, color="#1f77b4")
     ax.axhline(y=.5, color="red", ls="--", alpha=.5, label="S(t) = 0.5")
     ax.set(
-        title="Courbe de survie predite (Modele de Cox)",
+        title="Courbe de survie prédite (Modèle de Cox)",
         xlabel="Temps (mois)", ylabel="S(t)",
         ylim=(0, 1.05),
     )
@@ -65,7 +65,7 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
     plt.close(fig)
 
     # Key time points
-    st.markdown("#### Probabilites de survie estimees")
+    st.markdown("#### Probabilités de survie estimées")
     time_points = [12, 24, 36, 60, 100]
     probs = {}
     cols = st.columns(len(time_points))
@@ -80,50 +80,50 @@ caracteristiques d'un patient pour visualiser sa courbe de survie predite.
     # Dynamic interpretation of the patient profile
     profile_desc = []
     if age >= 65:
-        profile_desc.append("age avance")
+        profile_desc.append("âgé")
     elif age <= 45:
         profile_desc.append("relativement jeune")
     if smoker == "Oui":
         profile_desc.append("fumeur")
     if treatment == "Experimental":
-        profile_desc.append("sous traitement experimental")
+        profile_desc.append("sous traitement expérimental")
     if activity == "High":
         profile_desc.append("physiquement actif")
     elif activity == "Low":
-        profile_desc.append("faible activite physique")
+        profile_desc.append("faible activité physique")
 
     profile_txt = ", ".join(profile_desc) if profile_desc else "profil moyen"
     st.markdown(
-        f"Pour ce patient ({profile_txt}), le modele estime une probabilite de survie "
-        f"de **{probs[12]*100:.0f}%** a 1 an et **{probs[36]*100:.0f}%** a 3 ans. "
+        f"Pour ce patient ({profile_txt}), le modèle estime une probabilité de survie "
+        f"de **{probs[12]*100:.0f}%** à 1 an et **{probs[36]*100:.0f}%** à 3 ans. "
     )
     if probs[36] > 0.7:
         st.markdown(
-            "Ce profil presente un **pronostic favorable** avec une probabilite de survie "
-            "elevee a moyen terme."
+            "Ce profil présente un **pronostic favorable** avec une probabilité de survie "
+            "élevée à moyen terme."
         )
     elif probs[12] < 0.5:
         st.markdown(
-            "Ce profil presente un **pronostic defavorable** : la probabilite de survie "
-            "a 1 an est inferieure a 50%. Une prise en charge renforcee pourrait etre envisagee."
+            "Ce profil présente un **pronostic défavorable** : la probabilité de survie "
+            "à 1 an est inférieure à 50%. Une prise en charge renforcée pourrait être envisagée."
         )
 
     # ── Comparison with reference profiles ────────────────────────────────────
     st.markdown("---")
-    st.markdown("#### Comparaison avec des profils de reference")
+    st.markdown("#### Comparaison avec des profils de référence")
     st.markdown("""
-    - **Exemple de profil haut risque** : Homme, 70 ans, fumeur, traitement standard, activite faible
-    - **Exemple de profil intermediaire** : Homme, 55 ans, non-fumeur, traitement standard, activite moderee
-    - **Exemple de profil protege** : Femme, 45 ans, non-fumeuse, traitement experimental, activite haute
+    - **Exemple de profil haut risque** : Homme, 70 ans, fumeur, traitement standard, activité faible
+    - **Exemple de profil intermédiaire** : Homme, 55 ans, non-fumeur, traitement standard, activité modérée
+    - **Exemple de profil protégé** : Femme, 45 ans, non-fumeuse, traitement expérimental, activité haute
     """)
-    
+
     ref_profiles = pd.DataFrame([
         {"Age": 70, "Sex_Female": 0, "Smoker": 1, "Treatment_Experimental": 0, "Activity_High": 0, "Activity_Moderate": 0},
         {"Age": 55, "Sex_Female": 0, "Smoker": 0, "Treatment_Experimental": 0, "Activity_High": 0, "Activity_Moderate": 1},
         {"Age": 45, "Sex_Female": 1, "Smoker": 0, "Treatment_Experimental": 1, "Activity_High": 1, "Activity_Moderate": 0},
     ])
     ref_profiles = ref_profiles[model_cols]
-    labels = ["Haut risque", "Intermediaire", "Protege"]
+    labels = ["Haut risque", "Intermédiaire", "Protégé"]
     colors = ["#d62728", "#ff7f0e", "#2ca02c"]
 
     fig, ax = plt.subplots(figsize=(10, 5))

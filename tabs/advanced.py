@@ -21,25 +21,25 @@ COLORS = ["#6C63FF", "#3B82F6", "#06B6D4", "#10B981", "#F59E0B", "#EF4444", "#EC
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
-    st.markdown("### Analyses avancees")
+    st.markdown("### Analyses avancées")
 
     section = st.radio(
         "Section", [
-            "Modeles parametriques",
-            "Correlations",
-            "Residus de Cox",
-            "Sensibilite",
+            "Modèles paramétriques",
+            "Corrélations",
+            "Résidus de Cox",
+            "Sensibilité",
         ],
         horizontal=True, key="adv_section",
     )
 
-    if section == "Modeles parametriques":
+    if section == "Modèles paramétriques":
         _render_parametric(df, time_col, event_col)
-    elif section == "Correlations":
+    elif section == "Corrélations":
         _render_correlations(df, time_col, event_col)
-    elif section == "Residus de Cox":
+    elif section == "Résidus de Cox":
         _render_residuals(df, time_col, event_col)
-    elif section == "Sensibilite":
+    elif section == "Sensibilité":
         _render_sensitivity(df, time_col, event_col)
 
 
@@ -49,11 +49,11 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
 def _render_parametric(df, time_col, event_col):
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Modeles parametriques de survie")
+    st.markdown("#### Modèles paramétriques de survie")
     st.markdown("""
-    Contrairement a Kaplan-Meier (non parametrique), les modeles parametriques supposent
-    une **distribution** pour le temps de survie. Cela permet d'extrapoler au-dela des
-    donnees observees et de comparer la qualite d'ajustement via les criteres AIC et BIC.
+    Contrairement à Kaplan-Meier (non paramétrique), les modèles paramétriques supposent
+    une **distribution** pour le temps de survie. Cela permet d'extrapoler au-delà des
+    données observées et de comparer la qualité d'ajustement via les critères AIC et BIC.
     """)
 
     T = df[time_col].values
@@ -78,16 +78,16 @@ def _render_parametric(df, time_col, event_col):
     models["Log-Logistique"] = llf
 
     # Comparison table
-    st.markdown("##### Comparaison des modeles (AIC / BIC)")
+    st.markdown("##### Comparaison des modèles (AIC / BIC)")
 
     rows = []
     for name, m in models.items():
         rows.append({
-            "Modele": name,
+            "Modèle": name,
             "AIC": f"{m.AIC_:.2f}",
             "BIC": f"{m.BIC_:.2f}",
             "Log-vraisemblance": f"{m.log_likelihood_:.2f}",
-            "Mediane estimee": f"{m.median_survival_time_:.2f} mois",
+            "Médiane estimée": f"{m.median_survival_time_:.2f} mois",
         })
 
     comp_df = pd.DataFrame(rows)
@@ -99,22 +99,22 @@ def _render_parametric(df, time_col, event_col):
     st.dataframe(comp_df, use_container_width=True, hide_index=True)
 
     col1, col2 = st.columns(2)
-    col1.metric("Meilleur modele (AIC)", best_aic[0], f"AIC = {best_aic[1].AIC_:.2f}")
-    col2.metric("Meilleur modele (BIC)", best_bic[0], f"BIC = {best_bic[1].BIC_:.2f}")
+    col1.metric("Meilleur modèle (AIC)", best_aic[0], f"AIC = {best_aic[1].AIC_:.2f}")
+    col2.metric("Meilleur modèle (BIC)", best_bic[0], f"BIC = {best_bic[1].BIC_:.2f}")
 
     st.markdown("""
     <div class="info-card">
         <h4>AIC vs BIC</h4>
-        <p><b>AIC</b> (Akaike) favorise le meilleur ajustement aux donnees.
-        <b>BIC</b> (Bayesian) penalise davantage la complexite du modele.
-        Un AIC/BIC plus faible indique un meilleur modele.
-        Si les deux criteres concordent, le choix est clair.</p>
+        <p><b>AIC</b> (Akaike) favorise le meilleur ajustement aux données.
+        <b>BIC</b> (Bayesian) pénalise davantage la complexité du modèle.
+        Un AIC/BIC plus faible indique un meilleur modèle.
+        Si les deux critères concordent, le choix est clair.</p>
     </div>
     """, unsafe_allow_html=True)
 
     # Plot: KM vs parametric models
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Courbes de survie : Kaplan-Meier vs modeles parametriques")
+    st.markdown("##### Courbes de survie : Kaplan-Meier vs modèles paramétriques")
 
     fig = go.Figure()
 
@@ -141,7 +141,7 @@ def _render_parametric(df, time_col, event_col):
     fig.add_hline(y=0.5, line_dash="dot", line_color="rgba(255,255,255,0.3)",
                   annotation_text="S(t) = 0.5")
     fig.update_layout(
-        title="Comparaison des modeles de survie",
+        title="Comparaison des modèles de survie",
         xaxis_title="Temps (mois)",
         yaxis_title="S(t)",
         yaxis=dict(range=[0, 1.05]),
@@ -152,10 +152,10 @@ def _render_parametric(df, time_col, event_col):
 
     # Model details
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Detail des parametres estimes")
+    st.markdown("##### Détail des paramètres estimés")
 
     for name, m in models.items():
-        with st.expander(f"Parametres : {name}"):
+        with st.expander(f"Paramètres : {name}"):
             st.dataframe(m.summary, use_container_width=True)
 
 
@@ -165,12 +165,12 @@ def _render_parametric(df, time_col, event_col):
 
 def _render_correlations(df, time_col, event_col):
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Matrice de correlation")
+    st.markdown("#### Matrice de corrélation")
     st.markdown("""
-    La matrice de correlation mesure la dependance lineaire entre chaque paire de
-    variables numeriques. Un coefficient proche de +1 ou -1 indique une forte
-    correlation (positive ou negative), tandis qu'un coefficient proche de 0
-    indique l'absence de relation lineaire.
+    La matrice de corrélation mesure la dépendance linéaire entre chaque paire de
+    variables numériques. Un coefficient proche de +1 ou -1 indique une forte
+    corrélation (positive ou négative), tandis qu'un coefficient proche de 0
+    indique l'absence de relation linéaire.
     """)
 
     # Encode categorical for correlation
@@ -189,10 +189,10 @@ def _render_correlations(df, time_col, event_col):
     rename_map = {
         "Sex_num": "Sexe (F=1)",
         "Treatment_num": "Traitement (Exp=1)",
-        "Activity_num": "Activite (0-2)",
+        "Activity_num": "Activité (0-2)",
         "Time_to_Event": "Temps survie",
-        "Event_Observed": "Evenement",
-        "Comorbidities": "Comorbidites",
+        "Event_Observed": "Événement",
+        "Comorbidities": "Comorbidités",
         "Age": "Age",
         "BMI": "IMC",
         "Smoker": "Fumeur",
@@ -206,7 +206,7 @@ def _render_correlations(df, time_col, event_col):
         text_auto=".2f",
         color_continuous_scale=["#EF4444", "#1A1D23", "#6C63FF"],
         zmin=-1, zmax=1,
-        title="Matrice de correlation (Pearson)",
+        title="Matrice de corrélation (Pearson)",
         aspect="auto",
     )
     fig.update_layout(**PLOTLY_LAYOUT, height=600)
@@ -214,7 +214,7 @@ def _render_correlations(df, time_col, event_col):
 
     # Key correlations with time_col
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Correlations avec le temps de survie")
+    st.markdown("##### Corrélations avec le temps de survie")
 
     time_label = rename_map.get(time_col, time_col)
     if time_label in corr.columns:
@@ -230,7 +230,7 @@ def _render_correlations(df, time_col, event_col):
             textposition="outside",
         ))
         fig.update_layout(
-            title=f"Correlation de chaque variable avec {time_label}",
+            title=f"Corrélation de chaque variable avec {time_label}",
             xaxis_title="Coefficient de Pearson",
             xaxis=dict(range=[-1, 1]),
             **PLOTLY_LAYOUT,
@@ -240,12 +240,12 @@ def _render_correlations(df, time_col, event_col):
 
     # Scatter matrix for top variables
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Nuage de points : variables les plus correlees au temps de survie")
+    st.markdown("##### Nuage de points : variables les plus corrélées au temps de survie")
 
     scatter_cols = [c for c in ["Age", "BMI", "Comorbidities", "Smoker"] if c in df.columns]
     if scatter_cols and time_col in df.columns:
         selected = st.multiselect(
-            "Variables a afficher", scatter_cols, default=scatter_cols[:3],
+            "Variables à afficher", scatter_cols, default=scatter_cols[:3],
             key="corr_scatter_vars"
         )
         if selected:
@@ -267,7 +267,7 @@ def _render_correlations(df, time_col, event_col):
                 fig.update_yaxes(title_text="Temps (mois)" if i == 0 else "", row=1, col=i+1)
 
             fig.update_layout(
-                title="Relation entre variables et temps de survie (couleur = evenement)",
+                title="Relation entre variables et temps de survie (couleur = événement)",
                 **PLOTLY_LAYOUT,
                 height=400,
             )
@@ -280,10 +280,10 @@ def _render_correlations(df, time_col, event_col):
 
 def _render_residuals(df, time_col, event_col):
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Analyse des residus du modele de Cox")
+    st.markdown("#### Analyse des résidus du modèle de Cox")
     st.markdown("""
-    Les residus permettent d'evaluer la qualite d'ajustement du modele de Cox
-    et de detecter les observations mal predites ou influentes.
+    Les résidus permettent d'évaluer la qualité d'ajustement du modèle de Cox
+    et de détecter les observations mal prédites ou influentes.
     """)
 
     cox_data = prepare_cox_data(df, time_col, event_col)
@@ -291,7 +291,7 @@ def _render_residuals(df, time_col, event_col):
     cph, dropped = fit_cox_model(h, cox_data, time_col, event_col)
 
     if dropped:
-        st.info(f"Variables retirees (constantes) : {', '.join(dropped)}")
+        st.info(f"Variables retirées (constantes) : {', '.join(dropped)}")
 
     # Compute residuals
     # Martingale residuals
@@ -305,20 +305,20 @@ def _render_residuals(df, time_col, event_col):
         "Age": "Age",
         "Sex_Female": "Sexe (Femme)",
         "Smoker": "Fumeur",
-        "Treatment_Experimental": "Trait. Experimental",
-        "Activity_High": "Activite Haute",
-        "Activity_Moderate": "Activite Moderee",
+        "Treatment_Experimental": "Trait. Expérimental",
+        "Activity_High": "Activité Haute",
+        "Activity_Moderate": "Activité Modérée",
     }
 
-    # ── Martingale ─────────────────────────────────────────────────────────
+    # Martingale
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Residus de martingale")
+    st.markdown("##### Résidus de martingale")
     st.markdown("""
-    Les residus de martingale mesurent l'ecart entre le nombre d'evenements observes
-    et le nombre attendu par le modele pour chaque patient.
-    - Valeurs proches de 0 : bonne prediction
-    - Valeurs positives : evenement survenu plus tot que prevu
-    - Valeurs negatives : patient survit plus longtemps que prevu
+    Les résidus de martingale mesurent l'écart entre le nombre d'événements observés
+    et le nombre attendu par le modèle pour chaque patient.
+    - Valeurs proches de 0 : bonne prédiction
+    - Valeurs positives : événement survenu plus tôt que prévu
+    - Valeurs négatives : patient survit plus longtemps que prévu
     """)
 
     col1, col2 = st.columns(2)
@@ -330,13 +330,13 @@ def _render_residuals(df, time_col, event_col):
             y=martingale["martingale"],
             mode="markers",
             marker=dict(color=COLORS[0], size=4, opacity=0.5),
-            name="Residus",
+            name="Résidus",
         ))
         fig.add_hline(y=0, line_dash="dash", line_color="rgba(255,255,255,0.4)")
         fig.update_layout(
-            title="Residus de martingale par observation",
+            title="Résidus de martingale par observation",
             xaxis_title="Index du patient",
-            yaxis_title="Residu de martingale",
+            yaxis_title="Résidu de martingale",
             **PLOTLY_LAYOUT,
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -344,7 +344,7 @@ def _render_residuals(df, time_col, event_col):
     with col2:
         fig = px.histogram(
             martingale, x="martingale", nbins=50,
-            title="Distribution des residus de martingale",
+            title="Distribution des résidus de martingale",
             color_discrete_sequence=[COLORS[0]],
             opacity=0.85,
         )
@@ -353,7 +353,7 @@ def _render_residuals(df, time_col, event_col):
         st.plotly_chart(fig, use_container_width=True)
 
     # Martingale vs covariates (functional form check)
-    st.markdown("**Residus de martingale vs covariables** (verification de la forme fonctionnelle)")
+    st.markdown("**Résidus de martingale vs covariables** (vérification de la forme fonctionnelle)")
     cont_vars = [c for c in ["Age", "Smoker"] if c in cox_data.columns]
     if cont_vars:
         fig = make_subplots(rows=1, cols=len(cont_vars),
@@ -367,7 +367,7 @@ def _render_residuals(df, time_col, event_col):
                 showlegend=False,
             ), row=1, col=i+1)
             fig.update_xaxes(title_text=VAR_LABELS.get(var, var), row=1, col=i+1)
-            fig.update_yaxes(title_text="Residu" if i == 0 else "", row=1, col=i+1)
+            fig.update_yaxes(title_text="Résidu" if i == 0 else "", row=1, col=i+1)
 
         fig.update_layout(
             title="Forme fonctionnelle des covariables continues",
@@ -377,19 +377,19 @@ def _render_residuals(df, time_col, event_col):
         st.markdown("""
         <div class="info-card">
             <h4>Lecture</h4>
-            <p>Si la relation est lineaire (nuage horizontal autour de 0), la forme
-            fonctionnelle est correcte. Une courbe suggere qu'une transformation
-            (log, polynome) pourrait ameliorer le modele.</p>
+            <p>Si la relation est linéaire (nuage horizontal autour de 0), la forme
+            fonctionnelle est correcte. Une courbe suggère qu'une transformation
+            (log, polynôme) pourrait améliorer le modèle.</p>
         </div>
         """, unsafe_allow_html=True)
 
-    # ── Deviance ──────────────────────────────────────────────────────────
+    # Deviance
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Residus de deviance")
+    st.markdown("##### Résidus de déviance")
     st.markdown("""
-    Les residus de deviance sont une transformation des residus de martingale
-    qui produit une distribution plus symetrique. Les valeurs extremes
-    (|residu| > 2) signalent des observations mal ajustees.
+    Les résidus de déviance sont une transformation des résidus de martingale
+    qui produit une distribution plus symétrique. Les valeurs extrêmes
+    (|résidu| > 2) signalent des observations mal ajustées.
     """)
 
     col1, col2 = st.columns(2)
@@ -405,7 +405,7 @@ def _render_residuals(df, time_col, event_col):
                 color=[COLORS[5] if o else COLORS[0] for o in outlier_mask],
                 size=4, opacity=0.6,
             ),
-            name="Residus",
+            name="Résidus",
         ))
         fig.add_hline(y=2, line_dash="dash", line_color=COLORS[5],
                       annotation_text="Seuil +2")
@@ -413,9 +413,9 @@ def _render_residuals(df, time_col, event_col):
                       annotation_text="Seuil -2")
         fig.add_hline(y=0, line_dash="dot", line_color="rgba(255,255,255,0.3)")
         fig.update_layout(
-            title="Residus de deviance par observation",
+            title="Résidus de déviance par observation",
             xaxis_title="Index du patient",
-            yaxis_title="Residu de deviance",
+            yaxis_title="Résidu de déviance",
             **PLOTLY_LAYOUT,
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -430,17 +430,17 @@ def _render_residuals(df, time_col, event_col):
         if pct_outliers < 5:
             st.success(
                 f"Seulement {pct_outliers:.1f}% d'observations atypiques. "
-                "Le modele s'ajuste bien aux donnees."
+                "Le modèle s'ajuste bien aux données."
             )
         else:
             st.warning(
                 f"{pct_outliers:.1f}% d'observations atypiques. "
-                "Le modele pourrait etre ameliore."
+                "Le modèle pourrait être amélioré."
             )
 
         fig = px.histogram(
             deviance, x="deviance", nbins=50,
-            title="Distribution des residus de deviance",
+            title="Distribution des résidus de déviance",
             color_discrete_sequence=[COLORS[1]],
             opacity=0.85,
         )
@@ -448,18 +448,18 @@ def _render_residuals(df, time_col, event_col):
         fig.update_layout(**PLOTLY_LAYOUT, height=300)
         st.plotly_chart(fig, use_container_width=True)
 
-    # ── Schoenfeld ────────────────────────────────────────────────────────
+    # Schoenfeld
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Residus de Schoenfeld")
+    st.markdown("##### Résidus de Schoenfeld")
     st.markdown("""
-    Les residus de Schoenfeld testent l'hypothese de **risques proportionnels**.
-    Si les residus montrent une tendance en fonction du temps, l'hypothese
-    de proportionnalite est violee pour cette covariable.
+    Les résidus de Schoenfeld testent l'hypothèse de **risques proportionnels**.
+    Si les résidus montrent une tendance en fonction du temps, l'hypothèse
+    de proportionnalité est violée pour cette covariable.
     """)
 
     schoenfeld_cols = [c for c in schoenfeld.columns if c != time_col]
     selected_var = st.selectbox(
-        "Covariable a examiner",
+        "Covariable à examiner",
         schoenfeld_cols,
         format_func=lambda x: VAR_LABELS.get(x, x),
         key="schoenfeld_var",
@@ -471,7 +471,7 @@ def _render_residuals(df, time_col, event_col):
         y=schoenfeld[selected_var],
         mode="markers",
         marker=dict(color=COLORS[2], size=5, opacity=0.5),
-        name="Residus de Schoenfeld",
+        name="Résidus de Schoenfeld",
     ))
 
     # Add LOWESS-like trend via rolling mean
@@ -489,9 +489,9 @@ def _render_residuals(df, time_col, event_col):
 
     fig.add_hline(y=0, line_dash="dot", line_color="rgba(255,255,255,0.3)")
     fig.update_layout(
-        title=f"Residus de Schoenfeld : {VAR_LABELS.get(selected_var, selected_var)}",
+        title=f"Résidus de Schoenfeld : {VAR_LABELS.get(selected_var, selected_var)}",
         xaxis_title="Temps (mois)",
-        yaxis_title="Residu de Schoenfeld",
+        yaxis_title="Résidu de Schoenfeld",
         **PLOTLY_LAYOUT,
         legend=dict(orientation="h", yanchor="bottom", y=-0.2),
     )
@@ -499,9 +499,9 @@ def _render_residuals(df, time_col, event_col):
 
     st.markdown("""
     <div class="info-card">
-        <h4>Interpretation</h4>
-        <p>Si la ligne de tendance est horizontale (plate autour de 0), l'hypothese
-        de proportionnalite est respectee. Une pente ou une courbe indique que
+        <h4>Interprétation</h4>
+        <p>Si la ligne de tendance est horizontale (plate autour de 0), l'hypothèse
+        de proportionnalité est respectée. Une pente ou une courbe indique que
         l'effet de la variable change au cours du temps.</p>
     </div>
     """, unsafe_allow_html=True)
@@ -513,31 +513,31 @@ def _render_residuals(df, time_col, event_col):
 
 def _render_sensitivity(df, time_col, event_col):
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Analyse de sensibilite")
+    st.markdown("#### Analyse de sensibilité")
     st.markdown("""
-    L'analyse de sensibilite evalue la **robustesse** des resultats en excluant
+    L'analyse de sensibilité évalue la **robustesse** des résultats en excluant
     certains sous-groupes. Si les conclusions changent fortement quand on retire
-    un groupe, cela signifie que les resultats dependent de ce sous-groupe.
+    un groupe, cela signifie que les résultats dépendent de ce sous-groupe.
     """)
 
     # Define exclusion scenarios
-    scenarios = [{"label": "Population complete", "filter": lambda d: d}]
+    scenarios = [{"label": "Population complète", "filter": lambda d: d}]
 
     if "Smoker" in df.columns:
         scenarios.append({"label": "Sans fumeurs", "filter": lambda d: d[d["Smoker"] == 0]})
     if "Age" in df.columns:
         scenarios.append({"label": "Sans patients > 70 ans", "filter": lambda d: d[d["Age"] <= 70]})
     if "Comorbidities" in df.columns:
-        scenarios.append({"label": "Sans comorbidites multiples (>=2)",
+        scenarios.append({"label": "Sans comorbidités multiples (>=2)",
                           "filter": lambda d: d[d["Comorbidities"] < 2]})
     if "Treatment" in df.columns:
         scenarios.append({"label": "Traitement standard uniquement",
                           "filter": lambda d: d[d["Treatment"] == "Standard"]})
-        scenarios.append({"label": "Traitement experimental uniquement",
+        scenarios.append({"label": "Traitement expérimental uniquement",
                           "filter": lambda d: d[d["Treatment"] == "Experimental"]})
 
     # KM curves for each scenario
-    st.markdown("##### Courbes de Kaplan-Meier par scenario")
+    st.markdown("##### Courbes de Kaplan-Meier par scénario")
 
     fig = go.Figure()
     summary_rows = []
@@ -563,10 +563,10 @@ def _render_sensitivity(df, time_col, event_col):
         s60 = float(kmf.predict(60))
 
         summary_rows.append({
-            "Scenario": sc["label"],
+            "Scénario": sc["label"],
             "n": len(sub),
-            "Evenements": int(sub[event_col].sum()),
-            "Mediane survie": f"{kmf.median_survival_time_:.1f}",
+            "Événements": int(sub[event_col].sum()),
+            "Médiane survie": f"{kmf.median_survival_time_:.1f}",
             "S(12 mois)": f"{s12*100:.1f}%",
             "S(36 mois)": f"{s36*100:.1f}%",
             "S(60 mois)": f"{s60*100:.1f}%",
@@ -584,15 +584,15 @@ def _render_sensitivity(df, time_col, event_col):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("##### Tableau comparatif des scenarios")
+    st.markdown("##### Tableau comparatif des scénarios")
     st.dataframe(pd.DataFrame(summary_rows), use_container_width=True, hide_index=True)
 
     # Cox model sensitivity
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Stabilite des Hazard Ratios du modele de Cox")
+    st.markdown("##### Stabilité des Hazard Ratios du modèle de Cox")
     st.markdown("""
-    On compare les Hazard Ratios du modele de Cox entre la population complete
-    et chaque scenario d'exclusion. Des HR stables indiquent des resultats robustes.
+    On compare les Hazard Ratios du modèle de Cox entre la population complète
+    et chaque scénario d'exclusion. Des HR stables indiquent des résultats robustes.
     """)
 
     hr_data = []
@@ -611,7 +611,7 @@ def _render_sensitivity(df, time_col, event_col):
 
             for var_name in cph.summary.index:
                 hr_data.append({
-                    "Scenario": sc["label"],
+                    "Scénario": sc["label"],
                     "Variable": var_name,
                     "HR": cph.summary.loc[var_name, "exp(coef)"],
                     "IC_low": cph.summary.loc[var_name, "exp(coef) lower 95%"],
@@ -628,14 +628,14 @@ def _render_sensitivity(df, time_col, event_col):
             "Age": "Age",
             "Sex_Female": "Sexe (Femme)",
             "Smoker": "Fumeur",
-            "Treatment_Experimental": "Trait. Experimental",
-            "Activity_High": "Activite Haute",
-            "Activity_Moderate": "Activite Moderee",
+            "Treatment_Experimental": "Trait. Expérimental",
+            "Activity_High": "Activité Haute",
+            "Activity_Moderate": "Activité Modérée",
         }
 
         variables = hr_df["Variable"].unique()
         selected_var = st.selectbox(
-            "Variable a comparer entre scenarios",
+            "Variable à comparer entre scénarios",
             variables,
             format_func=lambda x: VAR_LABELS.get(x, x),
             key="sensitivity_var",
@@ -645,7 +645,7 @@ def _render_sensitivity(df, time_col, event_col):
 
         fig = go.Figure()
         fig.add_trace(go.Bar(
-            x=var_df["Scenario"],
+            x=var_df["Scénario"],
             y=var_df["HR"],
             marker_color=[COLORS[i % len(COLORS)] for i in range(len(var_df))],
             error_y=dict(
@@ -662,8 +662,8 @@ def _render_sensitivity(df, time_col, event_col):
         fig.add_hline(y=1, line_dash="dash", line_color="rgba(255,255,255,0.4)",
                       annotation_text="HR = 1 (neutre)")
         fig.update_layout(
-            title=f"Hazard Ratio de '{VAR_LABELS.get(selected_var, selected_var)}' par scenario",
-            xaxis_title="Scenario",
+            title=f"Hazard Ratio de '{VAR_LABELS.get(selected_var, selected_var)}' par scénario",
+            xaxis_title="Scénario",
             yaxis_title="Hazard Ratio",
             **PLOTLY_LAYOUT,
             height=450,
@@ -672,13 +672,13 @@ def _render_sensitivity(df, time_col, event_col):
 
     # Summary
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("##### Synthese")
+    st.markdown("##### Synthèse")
     st.markdown("""
     <div class="info-card">
-        <h4>Comment interpreter</h4>
+        <h4>Comment interpréter</h4>
         <p>Si les courbes de survie et les Hazard Ratios restent similaires entre les
-        scenarios, les resultats sont <b>robustes</b>. Si un scenario change fortement
-        les conclusions, ce sous-groupe est <b>influent</b> et merite une attention
-        particuliere dans l'interpretation.</p>
+        scénarios, les résultats sont <b>robustes</b>. Si un scénario change fortement
+        les conclusions, ce sous-groupe est <b>influent</b> et mérite une attention
+        particulière dans l'interprétation.</p>
     </div>
     """, unsafe_allow_html=True)

@@ -10,25 +10,25 @@ VAR_LABELS = {
     "Age": "Age",
     "Sex_Female": "Sexe (Femme vs Homme)",
     "Smoker": "Fumeur (Oui vs Non)",
-    "Treatment_Experimental": "Traitement Experimental vs Standard",
-    "Activity_High": "Activite Haute vs Basse",
-    "Activity_Moderate": "Activite Moderee vs Basse",
+    "Treatment_Experimental": "Traitement Expérimental vs Standard",
+    "Activity_High": "Activité Haute vs Basse",
+    "Activity_Moderate": "Activité Modérée vs Basse",
 }
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
-    st.subheader("Modele de regression de Cox")
+    st.subheader("Modèle de régression de Cox")
     st.markdown("""
-    Le modèle de Cox permet d’analyser l’impact de plusieurs variables (âge, tabagisme, traitement, etc.) sur le risque de décès des patients au cours du temps.
+    Le modèle de Cox permet d'analyser l'impact de plusieurs variables (âge, tabagisme, traitement, etc.) sur le risque de décès des patients au cours du temps.
     """)
 
     st.latex(r"h(t|X) = h_0(t) \cdot \exp(\beta_1 X_1 + \cdots + \beta_p X_p)")
     st.markdown("""
     Le **Hazard Ratio** $HR = e^{\\beta}$ quantifie l'effet de chaque covariable.
-                
-    Un Hazard Ratio (HR) supérieur à 1 indique une augmentation du risque de décès, 
-    tandis qu’un HR inférieur à 1 indique un effet protecteur. Si l’intervalle de 
-    confiance à 95% contient 1, l’effet n’est pas statistiquement significatif.""")
+
+    Un Hazard Ratio (HR) supérieur à 1 indique une augmentation du risque de décès,
+    tandis qu'un HR inférieur à 1 indique un effet protecteur. Si l'intervalle de
+    confiance à 95% contient 1, l'effet n'est pas statistiquement significatif.""")
 
     # ── Fit model ─────────────────────────────────────────────────────────────
     cox_data = prepare_cox_data(df, time_col, event_col)
@@ -36,17 +36,17 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     cph, dropped = fit_cox_model(h, cox_data, time_col, event_col)
 
     if dropped:
-        st.info(f"Variables retirees (constantes apres filtrage) : {', '.join(dropped)}")
+        st.info(f"Variables retirées (constantes après filtrage) : {', '.join(dropped)}")
 
     # ── Model summary ─────────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### Resultats du modele")
+    st.markdown("### Résultats du modèle")
 
     c_index = cph.concordance_index_
     col1, col2, col3 = st.columns(3)
     col1.metric("Concordance (C-index)", f"{c_index:.4f}")
     col2.metric("Observations", f"{int(cph.summary['z'].count() and len(cox_data))}")
-    col3.metric("Evenements", f"{int(cox_data[event_col].sum())}")
+    col3.metric("Événements", f"{int(cox_data[event_col].sum())}")
 
     if c_index >= 0.7:
         st.markdown(
@@ -90,7 +90,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     # ── Interpretation ────────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### Interpretation des Hazard Ratios")
+    st.markdown("### Interprétation des Hazard Ratios")
 
     # Preferred display order: risk factors first, sex grouped with demographics
     PREFERRED_ORDER = [
@@ -145,39 +145,39 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             r_pct = (r_hr - 1) * 100
             p_pct = (1 - p_hr) * 100
             parts.append(
-                f"Globalement, les resultats montrent que **{r_name}** est le principal "
-                f"facteur de risque de deces (HR = {r_hr:.3f}, soit +{r_pct:.0f}% de risque "
-                f"de deces), tandis que **{p_name}** est le facteur le plus protecteur "
+                f"Globalement, les résultats montrent que **{r_name}** est le principal "
+                f"facteur de risque de décès (HR = {r_hr:.3f}, soit +{r_pct:.0f}% de risque "
+                f"de décès), tandis que **{p_name}** est le facteur le plus protecteur "
                 f"sur la survie des patients (HR = {p_hr:.3f}, soit -{p_pct:.0f}% de risque)."
             )
         elif top_risk is not None:
             r_name = VAR_LABELS.get(top_risk["covariate"], top_risk["covariate"])
             r_pct = (top_risk["exp(coef)"] - 1) * 100
             parts.append(
-                f"Globalement, **{r_name}** est le principal facteur de risque identifie "
+                f"Globalement, **{r_name}** est le principal facteur de risque identifié "
                 f"(HR = {top_risk['exp(coef)']:.3f}, soit +{r_pct:.0f}% de risque)."
             )
         elif top_prot is not None:
             p_name = VAR_LABELS.get(top_prot["covariate"], top_prot["covariate"])
             p_pct = (1 - top_prot["exp(coef)"]) * 100
             parts.append(
-                f"Globalement, **{p_name}** est le facteur le plus protecteur identifie "
+                f"Globalement, **{p_name}** est le facteur le plus protecteur identifié "
                 f"(HR = {top_prot['exp(coef)']:.3f}, soit -{p_pct:.0f}% de risque)."
             )
         st.markdown(" ".join(parts))
     else:
         st.markdown(
-            "Aucune covariable n'atteint le seuil de significativite (p < 0.05). "
-            "Les effets observes pourraient etre dus au hasard. Cela peut indiquer "
-            "un manque de puissance statistique ou une absence reelle d'effet."
+            "Aucune covariable n'atteint le seuil de significativité (p < 0.05). "
+            "Les effets observés pourraient être dus au hasard. Cela peut indiquer "
+            "un manque de puissance statistique ou une absence réelle d'effet."
         )
 
     # ── Tableau d'impact des variables ────────────────────────────────────────
     st.markdown("---")
     st.markdown("### Impact de chaque variable sur la survie")
-    st.markdown("Ce tableau classe **toutes** les covariables du modele (y compris les "
-                "niveaux separes de l'activite physique et du traitement) selon leur effet "
-                "sur le risque de deces.")
+    st.markdown("Ce tableau classe **toutes** les covariables du modèle (y compris les "
+                "niveaux séparés de l'activité physique et du traitement) selon leur effet "
+                "sur le risque de décès.")
 
     impact_df = summary[["covariate", "exp(coef)", "p"]].copy()
     impact_df["Variable"] = impact_df["covariate"].map(VAR_LABELS).fillna(impact_df["covariate"])
@@ -214,28 +214,28 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     # ── Adjusted survival curves ──────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### Courbes de survie ajustees")
+    st.markdown("### Courbes de survie ajustées")
 
-    st.markdown("Les courbes de survie ajustées permettent de visualiser l’impact "
-    "réel d’une variable sur la survie en tenant compte simultanément des autres "
+    st.markdown("Les courbes de survie ajustées permettent de visualiser l'impact "
+    "réel d'une variable sur la survie en tenant compte simultanément des autres "
     "facteurs du modèle (âge, sexe, tabagisme, traitement, etc.). Elles permettent "
-    "ainsi d’isoler l’impact réel d’une variable, indépendamment des autres "
+    "ainsi d'isoler l'impact réel d'une variable, indépendamment des autres "
     "caractéristiques des patients.\n\n"
-    "Concrètement, cela signifie que deux patients ayant les mêmes caractéristiques, " 
-    "sauf pour une variable donnée (par exemple le tabagisme), n’auront pas le même " 
+    "Concrètement, cela signifie que deux patients ayant les mêmes caractéristiques, "
+    "sauf pour une variable donnée (par exemple le tabagisme), n'auront pas le même "
     "risque de décès.")
 
     COV_OPTIONS = {
         "Traitement": ("Treatment_Experimental", [0, 1], ["Standard", "Experimental"]),
         "Fumeur": ("Smoker", [0, 1], ["Non", "Oui"]),
         "Sexe": ("Sex_Female", [0, 1], ["Homme", "Femme"]),
-        "Activite Haute": ("Activity_High", [0, 1], ["Non", "Oui"]),
-        "Activite Moderee": ("Activity_Moderate", [0, 1], ["Non", "Oui"]),
+        "Activité Haute": ("Activity_High", [0, 1], ["Non", "Oui"]),
+        "Activité Modérée": ("Activity_Moderate", [0, 1], ["Non", "Oui"]),
     }
     available = {k: v for k, v in COV_OPTIONS.items() if v[0] in cph.summary.index}
 
     if available:
-        cov_label = st.selectbox("Covariable a comparer", list(available.keys()), key="cox_cov")
+        cov_label = st.selectbox("Covariable à comparer", list(available.keys()), key="cox_cov")
         covariate, values, value_labels = available[cov_label]
 
         fig, ax = plt.subplots(figsize=(10, 5))
@@ -254,7 +254,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                     break
             new_labels.append(new)
         ax.legend(handles, new_labels, title=cov_label)
-        ax.set(title=f"Survie ajustee — {cov_label}", xlabel="Temps (mois)",
+        ax.set(title=f"Survie ajustée - {cov_label}", xlabel="Temps (mois)",
                ylabel="S(t)", ylim=(0, 1.05))
         fig.tight_layout()
         st.pyplot(fig)
@@ -278,19 +278,19 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                 effect_desc = (
                     f"une **meilleure survie** chez les patients du groupe *{cmp_label}* "
                     f"par rapport au groupe *{ref_label}* (HR = {hr:.3f}, soit -{pct:.0f}% "
-                    f"de risque de deces, effet {sig_txt})"
+                    f"de risque de décès, effet {sig_txt})"
                 )
-                confirm = "confirme son effet protecteur mis en evidence par le modele de Cox."
+                confirm = "confirme son effet protecteur mis en évidence par le modèle de Cox."
             elif hr > 1:
                 effect_desc = (
-                    f"une **survie reduite** chez les patients du groupe *{cmp_label}* "
+                    f"une **survie réduite** chez les patients du groupe *{cmp_label}* "
                     f"par rapport au groupe *{ref_label}* (HR = {hr:.3f}, soit +{pct:.0f}% "
-                    f"de risque de deces, effet {sig_txt})"
+                    f"de risque de décès, effet {sig_txt})"
                 )
-                confirm = "confirme son effet deletere mis en evidence par le modele de Cox."
+                confirm = "confirme son effet délétère mis en évidence par le modèle de Cox."
             else:
                 effect_desc = f"un effet neutre (HR = {hr:.3f})"
-                confirm = "suggere que la variable n'a pas d'impact marque sur la survie."
+                confirm = "suggère que la variable n'a pas d'impact marqué sur la survie."
 
             st.markdown(
                 f"On observe {effect_desc}, ce qui {confirm}"
@@ -298,11 +298,11 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     # ── Proportional hazards test ─────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### Verification de l'hypothese des risques proportionnels")
+    st.markdown("### Vérification de l'hypothèse des risques proportionnels")
     st.markdown("""
-Le test des **residus de Schoenfeld** verifie que les HR sont constants dans le temps.
-- H0 : les residus ne dependent pas du temps (hypothese respectee)
-- p > 0.05 → hypothese validee pour cette covariable
+Le test des **résidus de Schoenfeld** vérifie que les HR sont constants dans le temps.
+- H0 : les résidus ne dépendent pas du temps (hypothèse respectée)
+- p > 0.05 → hypothèse validée pour cette covariable
 """)
 
     try:
@@ -319,7 +319,7 @@ Le test des **residus de Schoenfeld** verifie que les HR sont constants dans le 
         if ph_display.columns[0] != "Variable":
             ph_display = ph_display.rename(columns={ph_display.columns[0]: "Variable"})
         ph_display["Variable"] = ph_display["Variable"].map(VAR_LABELS).fillna(ph_display["Variable"])
-        ph_display["Hypothese respectee"] = ph_display["p"].apply(
+        ph_display["Hypothèse respectée"] = ph_display["p"].apply(
             lambda p: "Oui" if p > 0.05 else "Non"
         )
         ph_display["p"] = ph_display["p"].apply(lambda p: f"{p:.4f}")
@@ -328,22 +328,22 @@ Le test des **residus de Schoenfeld** verifie que les HR sont constants dans le 
         all_ok = all(ph_result.summary["p"] > 0.05)
         violated = [idx for idx, row in ph_result.summary.iterrows() if row["p"] <= 0.05]
         if all_ok:
-            st.success("L'hypothese des risques proportionnels est validee pour toutes les covariables.")
+            st.success("L'hypothèse des risques proportionnels est validée pour toutes les covariables.")
             st.markdown(
-                "Cela signifie que l’effet des variables sur le risque de décès reste **constant dans le " 
-                "temps**. Le modèle de Cox est donc valide et ses résultats peuvent être interprétés de " 
+                "Cela signifie que l'effet des variables sur le risque de décès reste **constant dans le "
+                "temps**. Le modèle de Cox est donc valide et ses résultats peuvent être interprétés de "
                 "manière fiable."
             )
         else:
             violated_names = [VAR_LABELS.get(v, v) for v in violated]
-            st.warning("L'hypothese n'est pas respectee pour certaines covariables. "
-                       "Les resultats du modele de Cox doivent etre interpretes avec prudence.")
+            st.warning("L'hypothèse n'est pas respectée pour certaines covariables. "
+                       "Les résultats du modèle de Cox doivent être interprétés avec prudence.")
             st.markdown(
-                f"Les variables **{', '.join(violated_names)}** violent l'hypothese de "
-                f"proportionnalite : leur effet sur le risque **varie au cours du temps**. "
-                f"Pour ces variables, le HR moyen rapporte ci-dessus ne reflete pas "
-                f"fidelement la realite. Des modeles stratifies ou a effets dependants "
-                f"du temps pourraient etre plus adaptes."
+                f"Les variables **{', '.join(violated_names)}** violent l'hypothèse de "
+                f"proportionnalité : leur effet sur le risque **varie au cours du temps**. "
+                f"Pour ces variables, le HR moyen rapporté ci-dessus ne reflète pas "
+                f"fidèlement la réalité. Des modèles stratifiés ou à effets dépendants "
+                f"du temps pourraient être plus adaptés."
             )
     except Exception as e:
         st.warning(f"Test non disponible : {e}")

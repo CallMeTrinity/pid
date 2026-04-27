@@ -8,17 +8,17 @@ import hashlib
 
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
-    st.markdown("### Export des resultats")
-    st.markdown("Telechargez les tableaux et metriques de l'analyse au format CSV.")
+    st.markdown("### Export des résultats")
+    st.markdown("Téléchargez les tableaux et métriques de l'analyse au format CSV.")
 
     # ── 1. Donnees filtrees ────────────────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Donnees filtrees")
-    st.markdown(f"Le jeu de donnees apres application des filtres : **{len(df)} patients**.")
+    st.markdown("#### Données filtrées")
+    st.markdown(f"Le jeu de données après application des filtres : **{len(df)} patients**.")
 
     csv_data = df.to_csv(index=False).encode("utf-8")
     st.download_button(
-        "Telecharger les donnees filtrees (CSV)",
+        "Télécharger les données filtrées (CSV)",
         data=csv_data,
         file_name="donnees_filtrees.csv",
         mime="text/csv",
@@ -31,12 +31,12 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     quant_cols = [c for c in df.select_dtypes(include="number").columns if c != event_col]
     if quant_cols:
         desc = df[quant_cols].describe().T
-        desc.columns = ["Count", "Moyenne", "Ecart-type", "Min", "Q1", "Mediane", "Q3", "Max"]
+        desc.columns = ["Count", "Moyenne", "Écart-type", "Min", "Q1", "Médiane", "Q3", "Max"]
         desc = desc.round(4)
 
         st.dataframe(desc, use_container_width=True, height=250)
         st.download_button(
-            "Telecharger les statistiques descriptives (CSV)",
+            "Télécharger les statistiques descriptives (CSV)",
             data=desc.to_csv().encode("utf-8"),
             file_name="statistiques_descriptives.csv",
             mime="text/csv",
@@ -63,7 +63,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     st.dataframe(km_table, use_container_width=True, height=250)
     st.download_button(
-        "Telecharger la table de survie (CSV)",
+        "Télécharger la table de survie (CSV)",
         data=km_table.to_csv(index=False).encode("utf-8"),
         file_name="table_survie_kaplan_meier.csv",
         mime="text/csv",
@@ -71,7 +71,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     # ── 4. Metriques KM cles ─────────────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Metriques cles de survie")
+    st.markdown("#### Métriques clés de survie")
 
     time_points = [12, 24, 36, 60, 100]
     metrics_rows = []
@@ -83,7 +83,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             "S(t) %": f"{s*100:.2f}%",
         })
     metrics_rows.append({
-        "Temps (mois)": "Mediane",
+        "Temps (mois)": "Médiane",
         "S(t)": "",
         "S(t) %": f"{kmf.median_survival_time_:.2f} mois",
     })
@@ -91,7 +91,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     metrics_df = pd.DataFrame(metrics_rows)
     st.dataframe(metrics_df, use_container_width=True, hide_index=True)
     st.download_button(
-        "Telecharger les metriques de survie (CSV)",
+        "Télécharger les métriques de survie (CSV)",
         data=metrics_df.to_csv(index=False).encode("utf-8"),
         file_name="metriques_survie.csv",
         mime="text/csv",
@@ -99,7 +99,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     # ── 5. Resultats du modele de Cox ─────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Resultats du modele de Cox")
+    st.markdown("#### Résultats du modèle de Cox")
 
     try:
         cox_data = prepare_cox_data(df, time_col, event_col)
@@ -111,8 +111,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             "Sex_Female": "Sexe (Femme vs Homme)",
             "Smoker": "Fumeur (Oui vs Non)",
             "Treatment_Experimental": "Traitement Exp. vs Standard",
-            "Activity_High": "Activite Haute vs Basse",
-            "Activity_Moderate": "Activite Moderee vs Basse",
+            "Activity_High": "Activité Haute vs Basse",
+            "Activity_Moderate": "Activité Modérée vs Basse",
         }
 
         cox_summary = cph.summary.copy().reset_index()
@@ -129,35 +129,35 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         with col2:
             st.metric("C-index", f"{cph.concordance_index_:.4f}")
             st.metric("Observations", len(cox_data))
-            st.metric("Evenements", int(cox_data[event_col].sum()))
+            st.metric("Événements", int(cox_data[event_col].sum()))
 
         st.download_button(
-            "Telecharger les resultats Cox (CSV)",
+            "Télécharger les résultats Cox (CSV)",
             data=display.to_csv(index=False).encode("utf-8"),
             file_name="resultats_modele_cox.csv",
             mime="text/csv",
         )
     except Exception as e:
-        st.warning(f"Modele de Cox non disponible : {e}")
+        st.warning(f"Modèle de Cox non disponible : {e}")
 
     # ── 6. Export complet (ZIP) ───────────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("#### Export complet")
-    st.markdown("Telechargez tous les tableaux en un seul fichier Excel (plusieurs onglets).")
+    st.markdown("Téléchargez tous les tableaux en un seul fichier Excel (plusieurs onglets).")
 
     try:
         buffer = io.BytesIO()
         with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df.to_excel(writer, sheet_name="Donnees filtrees", index=False)
+            df.to_excel(writer, sheet_name="Données filtrées", index=False)
             if quant_cols:
                 desc.to_excel(writer, sheet_name="Stats descriptives")
             km_table.to_excel(writer, sheet_name="Table KM", index=False)
-            metrics_df.to_excel(writer, sheet_name="Metriques survie", index=False)
+            metrics_df.to_excel(writer, sheet_name="Métriques survie", index=False)
             if 'display' in dir():
-                display.to_excel(writer, sheet_name="Modele Cox", index=False)
+                display.to_excel(writer, sheet_name="Modèle Cox", index=False)
 
         st.download_button(
-            "Telecharger l'export complet (Excel)",
+            "Télécharger l'export complet (Excel)",
             data=buffer.getvalue(),
             file_name="analyse_survie_complete.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

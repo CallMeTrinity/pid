@@ -12,7 +12,7 @@ PLOTLY_LAYOUT = dict(
 
 
 def render(df_raw: pd.DataFrame, df: pd.DataFrame):
-    st.markdown("### Gestion des donnees manquantes")
+    st.markdown("### Gestion des données manquantes")
 
     # Current state
     missing = df_raw.isna().sum()
@@ -26,9 +26,9 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
     total_missing = int(missing.sum())
 
     if total_missing == 0:
-        st.success("Aucune donnee manquante dans le jeu de donnees.")
+        st.success("Aucune donnée manquante dans le jeu de données.")
     else:
-        st.error(f"{total_missing} valeur(s) manquante(s) detectee(s).")
+        st.error(f"{total_missing} valeur(s) manquante(s) détectée(s).")
 
     col1, col2 = st.columns([1, 1])
 
@@ -52,35 +52,35 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
             st.markdown("""
             <div class="info-card">
                 <h4>Dataset complet</h4>
-                <p>Aucune valeur manquante a afficher. Le jeu de donnees valide pour l'analyse.</p>
+                <p>Aucune valeur manquante à afficher. Le jeu de données est valide pour l'analyse.</p>
             </div>
             """, unsafe_allow_html=True)
 
     # Handling options
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Strategies de traitement")
+    st.markdown("#### Stratégies de traitement")
 
     if total_missing == 0:
         st.info(
-            "Le jeu de donnees est complet. Les options ci-dessous "
-            "s'appliqueraient si des valeurs manquantes etaient presentes."
+            "Le jeu de données est complet. Les options ci-dessous "
+            "s'appliqueraient si des valeurs manquantes étaient présentes."
         )
 
     st.markdown("""
-| Strategie | Description | Quand l'utiliser |
+| Stratégie | Description | Quand l'utiliser |
 |-----------|-------------|------------------|
-| **Suppression de lignes** | Supprimer les lignes contenant des `NaN` | Peu de valeurs manquantes, donnees MCAR |
+| **Suppression de lignes** | Supprimer les lignes contenant des `NaN` | Peu de valeurs manquantes, données MCAR |
 | **Suppression de colonnes** | Supprimer les colonnes avec trop de `NaN` | Variable avec > 50% de manquant |
-| **Remplacement par la moyenne** | Remplacer `NaN` par la moyenne de la colonne | Variable quantitative, distribution symetrique |
-| **Remplacement par la mediane** | Remplacer `NaN` par la mediane | Variable quantitative, distribution asymetrique |
-| **Remplacement par le mode** | Remplacer `NaN` par la valeur la plus frequente | Variable qualitative |
+| **Remplacement par la moyenne** | Remplacer `NaN` par la moyenne de la colonne | Variable quantitative, distribution symétrique |
+| **Remplacement par la médiane** | Remplacer `NaN` par la médiane | Variable quantitative, distribution asymétrique |
+| **Remplacement par le mode** | Remplacer `NaN` par la valeur la plus fréquente | Variable qualitative |
 """)
 
     if total_missing > 0:
         strategy = st.selectbox(
-            "Strategie a appliquer",
+            "Stratégie à appliquer",
             ["Aucune", "Suppression de lignes", "Suppression de colonnes",
-             "Moyenne", "Mediane", "Mode"],
+             "Moyenne", "Médiane", "Mode"],
         )
         cols_with_na = [c for c in df_raw.columns if df_raw[c].isna().any()]
         target_cols = st.multiselect("Colonnes cibles", cols_with_na, default=cols_with_na)
@@ -88,7 +88,7 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
         strat_map = {
             "Suppression de lignes": "drop_rows",
             "Suppression de colonnes": "drop_cols",
-            "Moyenne": "mean", "Mediane": "median", "Mode": "mode",
+            "Moyenne": "mean", "Médiane": "median", "Mode": "mode",
         }
 
         if strategy != "Aucune" and target_cols:
@@ -96,7 +96,7 @@ def render(df_raw: pd.DataFrame, df: pd.DataFrame):
                 df_clean = handle_missing(df_raw, strat_map[strategy], target_cols)
                 remaining = int(df_clean.isna().sum().sum())
                 st.success(
-                    f"Traitement applique. "
+                    f"Traitement appliqué. "
                     f"Lignes : {len(df_raw)} → {len(df_clean)}. "
                     f"Valeurs manquantes restantes : {remaining}."
                 )

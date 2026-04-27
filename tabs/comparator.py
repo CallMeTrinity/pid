@@ -19,8 +19,8 @@ COLORS_B = ["#F59E0B", "#EF4444"]
 def render(df: pd.DataFrame, time_col: str, event_col: str):
     st.markdown("### Comparateur de sous-groupes")
     st.markdown("""
-    Definissez deux sous-populations en choisissant des criteres differents,
-    puis comparez leurs courbes de survie et leurs caracteristiques cote a cote.
+    Définissez deux sous-populations en choisissant des critères différents,
+    puis comparez leurs courbes de survie et leurs caractéristiques côte à côte.
     """)
 
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
@@ -49,12 +49,12 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     st.markdown("#### Comparaison des populations")
 
     col1, col2, col3, col4, col5, col6 = st.columns(6)
-    col1.metric("Groupe A — n", len(df_a))
-    col2.metric("A — Evenements", int(df_a[event_col].sum()) if len(df_a) > 0 else 0)
-    col3.metric("A — Age moyen", f"{df_a['Age'].mean():.1f}" if "Age" in df_a.columns and len(df_a) > 0 else "N/A")
-    col4.metric("Groupe B — n", len(df_b))
-    col5.metric("B — Evenements", int(df_b[event_col].sum()) if len(df_b) > 0 else 0)
-    col6.metric("B — Age moyen", f"{df_b['Age'].mean():.1f}" if "Age" in df_b.columns and len(df_b) > 0 else "N/A")
+    col1.metric("Groupe A - n", len(df_a))
+    col2.metric("A - Événements", int(df_a[event_col].sum()) if len(df_a) > 0 else 0)
+    col3.metric("A - Âge moyen", f"{df_a['Age'].mean():.1f}" if "Age" in df_a.columns and len(df_a) > 0 else "N/A")
+    col4.metric("Groupe B - n", len(df_b))
+    col5.metric("B - Événements", int(df_b[event_col].sum()) if len(df_b) > 0 else 0)
+    col6.metric("B - Âge moyen", f"{df_b['Age'].mean():.1f}" if "Age" in df_b.columns and len(df_b) > 0 else "N/A")
 
     if len(df_a) < 5 or len(df_b) < 5:
         st.warning("Chaque groupe doit contenir au moins 5 patients pour une comparaison fiable.")
@@ -121,16 +121,16 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     )
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Test du Log-Rank — Statistique", f"{lr.test_statistic:.4f}")
+    col1.metric("Test du Log-Rank - Statistique", f"{lr.test_statistic:.4f}")
     col2.metric("p-value", f"{lr.p_value:.6f}")
     if lr.p_value < 0.05:
-        col3.success("Difference significative")
+        col3.success("Différence significative")
     else:
-        col3.warning("Difference non significative")
+        col3.warning("Différence non significative")
 
     # ── Survival metrics comparison ───────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Metriques de survie comparees")
+    st.markdown("#### Métriques de survie comparées")
 
     time_points = [12, 24, 36, 60]
     rows = []
@@ -142,25 +142,25 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             "Temps (mois)": t,
             "S(t) Groupe A": f"{sa*100:.1f}%",
             "S(t) Groupe B": f"{sb*100:.1f}%",
-            "Difference (A-B)": f"{diff:+.1f} pts",
+            "Différence (A-B)": f"{diff:+.1f} pts",
         })
     rows.append({
-        "Temps (mois)": "Mediane",
+        "Temps (mois)": "Médiane",
         "S(t) Groupe A": f"{kmf_a.median_survival_time_:.1f} mois",
         "S(t) Groupe B": f"{kmf_b.median_survival_time_:.1f} mois",
-        "Difference (A-B)": f"{kmf_a.median_survival_time_ - kmf_b.median_survival_time_:+.1f} mois",
+        "Différence (A-B)": f"{kmf_a.median_survival_time_ - kmf_b.median_survival_time_:+.1f} mois",
     })
 
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
     # ── Profile comparison ────────────────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Profil demographique compare")
+    st.markdown("#### Profil démographique comparé")
 
     profile_vars = [
-        ("Age", "Age moyen"),
+        ("Age", "Âge moyen"),
         ("BMI", "IMC moyen"),
-        ("Comorbidities", "Comorbidites moy."),
+        ("Comorbidities", "Comorbidités moy."),
     ]
     cat_vars = [
         ("Sex", "Female", "% Femmes"),
@@ -174,7 +174,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             va = df_a[col].mean() if len(df_a) > 0 else np.nan
             vb = df_b[col].mean() if len(df_b) > 0 else np.nan
             profile_rows.append({
-                "Caracteristique": label,
+                "Caractéristique": label,
                 "Groupe A": f"{va:.1f}",
                 "Groupe B": f"{vb:.1f}",
             })
@@ -183,7 +183,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             pa = (df_a[col] == val).mean() * 100 if len(df_a) > 0 else 0
             pb = (df_b[col] == val).mean() * 100 if len(df_b) > 0 else 0
             profile_rows.append({
-                "Caracteristique": label,
+                "Caractéristique": label,
                 "Groupe A": f"{pa:.1f}%",
                 "Groupe B": f"{pb:.1f}%",
             })
@@ -192,7 +192,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     # ── Cox prediction comparison ─────────────────────────────────────────────
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Prediction Cox — profil moyen de chaque groupe")
+    st.markdown("#### Prédiction Cox - profil moyen de chaque groupe")
 
     try:
         cox_data = prepare_cox_data(df, time_col, event_col)
@@ -222,7 +222,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         ))
         fig.add_hline(y=0.5, line_dash="dot", line_color="rgba(255,255,255,0.3)")
         fig.update_layout(
-            title="Courbe de survie predite (Cox) — profil moyen de chaque groupe",
+            title="Courbe de survie prédite (Cox) - profil moyen de chaque groupe",
             xaxis_title="Temps (mois)", yaxis_title="S(t)",
             yaxis=dict(range=[0, 1.05]),
             **PLOTLY_LAYOUT,
@@ -230,7 +230,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         )
         st.plotly_chart(fig, use_container_width=True)
     except Exception as e:
-        st.info(f"Prediction Cox non disponible : {e}")
+        st.info(f"Prédiction Cox non disponible : {e}")
 
 
 def _build_filters(df, time_col, event_col, suffix):
@@ -256,11 +256,11 @@ def _build_filters(df, time_col, event_col, suffix):
 
     if "Physical_Activity" in df.columns:
         opts = sorted(df["Physical_Activity"].dropna().unique().tolist())
-        filters["Physical_Activity"] = st.multiselect("Activite", opts, default=opts, key=f"cmp_act_{suffix}")
+        filters["Physical_Activity"] = st.multiselect("Activité", opts, default=opts, key=f"cmp_act_{suffix}")
 
     if "Comorbidities" in df.columns:
         cmin, cmax = int(df["Comorbidities"].min()), int(df["Comorbidities"].max())
-        filters["Comorbidities"] = st.slider("Comorbidites", cmin, cmax, (cmin, cmax), key=f"cmp_comorb_{suffix}")
+        filters["Comorbidities"] = st.slider("Comorbidités", cmin, cmax, (cmin, cmax), key=f"cmp_comorb_{suffix}")
 
     return filters
 
