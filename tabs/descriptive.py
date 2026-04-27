@@ -16,7 +16,7 @@ QUALI_AS_INT = ["Smoker", "Event_Observed"]
 # Pretty labels for axes (map raw → display string)
 LABEL_MAPS = {
     "Smoker": {0: "Non", 1: "Oui"},
-    "Event_Observed": {0: "Censure", 1: "Deces"},
+    "Event_Observed": {0: "Censuré", 1: "Décès"},
     "Sex": {"Male": "Homme", "Female": "Femme", "M": "Homme", "F": "Femme"},
 }
 
@@ -48,8 +48,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                   if c not in [event_col] and c not in QUALI_AS_INT]
     if quant_cols:
         desc = df[quant_cols].describe().T
-        desc.columns = ["Count", "Moyenne", "Ecart-type", "Min",
-                        "Q1 (25%)", "Mediane (50%)", "Q3 (75%)", "Max"]
+        desc.columns = ["Count", "Moyenne", "Écart-type", "Min",
+                        "Q1 (25%)", "Médiane (50%)", "Q3 (75%)", "Max"]
         desc = desc.round(2)
         st.dataframe(desc, use_container_width=True)
 
@@ -61,18 +61,18 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             cv = (std_v / mean_v * 100) if mean_v else 0
             skew = s.skew()
             if abs(skew) < 0.5:
-                shape = "symetrique"
+                shape = "symétrique"
             elif skew > 0:
-                shape = "asymetrique a droite"
+                shape = "asymétrique à droite"
             else:
-                shape = "asymetrique a gauche"
-            disp = ("faible" if cv < 20 else "moderee" if cv < 40 else "forte")
+                shape = "asymétrique à gauche"
+            disp = ("faible" if cv < 20 else "modérée" if cv < 40 else "forte")
             bullets.append(
-                f"- **{c}** : moyenne {mean_v:.1f}, mediane {med_v:.1f}, "
-                f"ecart-type {std_v:.1f} — distribution {shape} avec une dispersion {disp} (CV={cv:.0f}%)."
+                f"- **{c}** : moyenne {mean_v:.1f}, médiane {med_v:.1f}, "
+                f"écart-type {std_v:.1f}, distribution {shape} avec une dispersion {disp} (CV={cv:.0f}%)."
             )
         st.markdown(
-            "**Interpretation :** les statistiques ci-dessus resument la tendance "
+            "**Interprétation :** les statistiques ci-dessus résument la tendance "
             "centrale et la dispersion des variables quantitatives.\n" + "\n".join(bullets)
         )
     else:
@@ -84,8 +84,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     col1, col2, col3, col4, col5 = st.columns(5)
     t = df[time_col]
     col1.metric("Moyenne", f"{t.mean():.1f}")
-    col2.metric("Mediane", f"{t.median():.1f}")
-    col3.metric("Ecart-type", f"{t.std():.1f}")
+    col2.metric("Médiane", f"{t.median():.1f}")
+    col3.metric("Écart-type", f"{t.std():.1f}")
     col4.metric("Min", f"{t.min():.1f}")
     col5.metric("Max", f"{t.max():.1f}")
 
@@ -97,28 +97,28 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         opacity=0.85,
     )
     fig.add_vline(x=t.median(), line_dash="dash", line_color="#EF4444",
-                  annotation_text=f"Mediane: {t.median():.1f}")
+                  annotation_text=f"Médiane: {t.median():.1f}")
     fig.update_layout(**PLOTLY_LAYOUT)
     st.plotly_chart(fig, use_container_width=True)
 
     skew = t.skew()
     if abs(skew) < 0.5:
-        shape_txt = "relativement symetrique"
+        shape_txt = "relativement symétrique"
     elif skew > 0:
-        shape_txt = "asymetrique a droite (etalee vers les grandes valeurs)"
+        shape_txt = "asymétrique à droite (étalée vers les grandes valeurs)"
     else:
-        shape_txt = "asymetrique a gauche (etalee vers les petites valeurs)"
+        shape_txt = "asymétrique à gauche (étalée vers les petites valeurs)"
 
     iqr = t.quantile(0.75) - t.quantile(0.25)
     cv = t.std() / t.mean() * 100 if t.mean() else 0
 
     st.markdown(
         f"La distribution du temps de suivi est **{shape_txt}** (skewness = {skew:.2f}). "
-        f"L'ecart interquartile est de **{iqr:.1f} mois** : 50% des patients ont un temps "
+        f"L'écart interquartile est de **{iqr:.1f} mois** : 50% des patients ont un temps "
         f"de suivi compris entre {t.quantile(0.25):.1f} et {t.quantile(0.75):.1f} mois. "
         f"Le coefficient de variation ({cv:.1f}%) indique une "
-        f"{'forte' if cv > 50 else 'moderee' if cv > 30 else 'faible'} dispersion "
-        f"des durees de suivi."
+        f"{'forte' if cv > 50 else 'modérée' if cv > 30 else 'faible'} dispersion "
+        f"des durées de suivi."
     )
 
     # Histogramme des comorbidités (si dispo)
@@ -126,12 +126,12 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
         st.markdown("#### Zoom sur `Comorbidities`")
         counts_c = df["Comorbidities"].value_counts().sort_index().reset_index()
-        counts_c.columns = ["Comorbidites", "Effectif"]
+        counts_c.columns = ["Comorbidités", "Effectif"]
         total = counts_c["Effectif"].sum()
         counts_c["%"] = (counts_c["Effectif"] / total * 100).round(1)
         fig = px.bar(
-            counts_c, x="Comorbidites", y="Effectif",
-            title="Distribution du nombre de comorbidites",
+            counts_c, x="Comorbidités", y="Effectif",
+            title="Distribution du nombre de comorbidités",
             text="%",
             color_discrete_sequence=[COLORS[1]],
         )
@@ -141,7 +141,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         pct_0 = (df["Comorbidities"] == 0).mean() * 100
         pct_multi = (df["Comorbidities"] >= 2).mean() * 100
         st.markdown(
-            f"**{pct_0:.0f}%** des patients n'ont aucune comorbidite, "
+            f"**{pct_0:.0f}%** des patients n'ont aucune comorbidité, "
             f"**{pct_multi:.0f}%** en ont au moins 2."
         )
 
@@ -159,7 +159,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     cat_cols = list(dict.fromkeys(cat_cols))
 
     if not cat_cols:
-        st.info("Aucune variable qualitative detectee.")
+        st.info("Aucune variable qualitative détectée.")
     else:
         cols_per_row = 3
         for i in range(0, len(cat_cols), cols_per_row):
@@ -183,13 +183,13 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                                 [o for o in index if o not in order]
 
                     freq_df = pd.DataFrame({
-                        "Categorie": index,
+                        "Catégorie": index,
                         "Effectif": [int(counts[k]) for k in index],
                         "%": [round(float(freq[k]), 1) for k in index],
                     })
                     st.markdown(f"**{col_name}**")
                     fig = px.bar(
-                        freq_df, x="Categorie", y="Effectif", text="%",
+                        freq_df, x="Catégorie", y="Effectif", text="%",
                         color_discrete_sequence=[COLORS[(i + j) % len(COLORS)]],
                         height=280,
                     )
@@ -207,10 +207,10 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             display = _pretty_series(df, c)
             top_cat = display.value_counts(normalize=True).idxmax()
             top_pct = display.value_counts(normalize=True).max() * 100
-            quali_lines.append(f"- **{c}** : la modalite la plus frequente est "
+            quali_lines.append(f"- **{c}** : la modalité la plus fréquente est "
                                f"*{top_cat}* ({top_pct:.0f}% des patients).")
         st.markdown(
-            "**Interpretation :** la repartition des modalites pour chaque variable qualitative "
+            "**Interprétation :** la répartition des modalités pour chaque variable qualitative "
             "est la suivante.\n" + "\n".join(quali_lines)
         )
 
@@ -218,8 +218,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     derived_cols = [d for d in ["Tranche_Age", "Tranche_BMI"] if d in df.columns]
     if derived_cols:
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        st.markdown("#### Tranches (variables derivees)")
-        st.caption("Tranches construites a partir des variables quantitatives "
+        st.markdown("#### Tranches (variables dérivées)")
+        st.caption("Tranches construites à partir des variables quantitatives "
                    "Age et IMC pour faciliter la comparaison entre groupes.")
         cols = st.columns(len(derived_cols))
         for widget, derived in zip(cols, derived_cols):

@@ -17,15 +17,15 @@ COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"]
 
 def render(df: pd.DataFrame, time_col: str, event_col: str):
     if "Comorbidities" not in df.columns:
-        st.warning("La variable `Comorbidities` n'est pas presente dans le jeu de donnees.")
+        st.warning("La variable `Comorbidities` n'est pas présente dans le jeu de données.")
         return
 
-    st.markdown("### Analyse des Comorbidites")
+    st.markdown("### Analyse des Comorbidités")
     st.markdown("""
     <div class="info-card">
-        <h4>Qu'est-ce qu'une comorbidite ?</h4>
-        <p>Une comorbidite designe la presence d'une ou plusieurs pathologies associees
-        chez un patient. Le nombre de comorbidites est un indicateur majeur de la complexite
+        <h4>Qu'est-ce qu'une comorbidité ?</h4>
+        <p>Une comorbidité désigne la présence d'une ou plusieurs pathologies associées
+        chez un patient. Le nombre de comorbidités est un indicateur majeur de la complexité
         clinique et un facteur pronostique reconnu en analyse de survie.</p>
     </div>
     """, unsafe_allow_html=True)
@@ -40,21 +40,21 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Moyenne", f"{comorb.mean():.2f}")
-    col2.metric("Mediane", f"{comorb.median():.0f}")
+    col2.metric("Médiane", f"{comorb.median():.0f}")
     col3.metric("Max", f"{int(comorb.max())}")
     pct_multi = (comorb >= 2).mean() * 100
-    col4.metric("≥ 2 comorbidites", f"{pct_multi:.1f}%")
+    col4.metric("≥ 2 comorbidités", f"{pct_multi:.1f}%")
 
     col1, col2 = st.columns(2)
 
     with col1:
         # Distribution
         counts = comorb.value_counts().sort_index().reset_index()
-        counts.columns = ["Comorbidites", "Effectif"]
+        counts.columns = ["Comorbidités", "Effectif"]
         fig = px.bar(
-            counts, x="Comorbidites", y="Effectif",
-            title="Distribution du nombre de comorbidites",
-            color="Comorbidites",
+            counts, x="Comorbidités", y="Effectif",
+            title="Distribution du nombre de comorbidités",
+            color="Comorbidités",
             color_continuous_scale="Viridis",
             text="Effectif",
         )
@@ -73,7 +73,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         group_counts.columns = ["Groupe", "Effectif"]
         fig = px.pie(
             group_counts, names="Groupe", values="Effectif",
-            title="Repartition par categorie",
+            title="Répartition par catégorie",
             color_discrete_sequence=COLORS,
             hole=0.4,
         )
@@ -102,7 +102,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
             fig.add_trace(go.Scatter(
                 x=sf.index, y=sf.iloc[:, 0],
-                name=f"{int(g)} comorbidite(s)",
+                name=f"{int(g)} comorbidité(s)",
                 line=dict(color=COLORS[i % len(COLORS)], width=2.5),
                 mode="lines",
             ))
@@ -119,7 +119,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         fig.add_hline(y=0.5, line_dash="dot", line_color="rgba(255,255,255,0.3)",
                       annotation_text="S(t) = 0.5")
         fig.update_layout(
-            title="Courbes de survie (Kaplan-Meier) par nombre de comorbidites",
+            title="Courbes de survie (Kaplan-Meier) par nombre de comorbidités",
             xaxis_title="Temps (mois)",
             yaxis_title="S(t)",
             yaxis=dict(range=[0, 1.05]),
@@ -130,16 +130,16 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
     with col2:
         # Median survival by group
-        st.markdown("**Survie mediane par groupe**")
+        st.markdown("**Survie médiane par groupe**")
         rows = []
         for g in groups:
             mask = comorb == g
             kmf.fit(df.loc[mask, time_col], event_observed=df.loc[mask, event_col])
             rows.append({
-                "Comorbidites": int(g),
+                "Comorbidités": int(g),
                 "n": int(mask.sum()),
-                "Evenements": int(df.loc[mask, event_col].sum()),
-                "Mediane (mois)": f"{kmf.median_survival_time_:.1f}",
+                "Événements": int(df.loc[mask, event_col].sum()),
+                "Médiane (mois)": f"{kmf.median_survival_time_:.1f}",
             })
         st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
@@ -150,15 +150,15 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             st.metric("Statistique", f"{r.test_statistic:.4f}")
             st.metric("p-value", f"{r.p_value:.6f}")
             if r.p_value < 0.05:
-                st.success("Difference significative entre les groupes")
+                st.success("Différence significative entre les groupes")
             else:
-                st.warning("Difference non significative")
+                st.warning("Différence non significative")
 
     # ══════════════════════════════════════════════════════════════════════════
     # 3. PROFIL DES PATIENTS PAR COMORBIDITE
     # ══════════════════════════════════════════════════════════════════════════
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### 3. Profil des patients par niveau de comorbidite")
+    st.markdown("#### 3. Profil des patients par niveau de comorbidité")
 
     df_profil = df.copy()
     df_profil["Groupe_Comorb"] = pd.cut(
@@ -173,8 +173,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         fig = px.box(
             df_profil, x="Groupe_Comorb", y="Age",
             color="Groupe_Comorb",
-            title="Age par groupe de comorbidites",
-            labels={"Groupe_Comorb": "Comorbidites", "Age": "Age (annees)"},
+            title="Âge par groupe de comorbidités",
+            labels={"Groupe_Comorb": "Comorbidités", "Age": "Âge (années)"},
             color_discrete_sequence=COLORS,
         )
         fig.update_layout(showlegend=False, **PLOTLY_LAYOUT)
@@ -186,8 +186,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             fig = px.box(
                 df_profil, x="Groupe_Comorb", y="BMI",
                 color="Groupe_Comorb",
-                title="IMC par groupe de comorbidites",
-                labels={"Groupe_Comorb": "Comorbidites", "BMI": "IMC"},
+                title="IMC par groupe de comorbidités",
+                labels={"Groupe_Comorb": "Comorbidités", "BMI": "IMC"},
                 color_discrete_sequence=COLORS,
             )
             fig.update_layout(showlegend=False, **PLOTLY_LAYOUT)
@@ -215,8 +215,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             fig = px.bar(
                 melted,
                 x="Groupe_Comorb", y="Proportion", color=label,
-                title=f"{label} par comorbidites",
-                labels={"Groupe_Comorb": "Comorbidites", "Proportion": "Proportion (%)"},
+                title=f"{label} par comorbidités",
+                labels={"Groupe_Comorb": "Comorbidités", "Proportion": "Proportion (%)"},
                 color_discrete_sequence=COLORS,
                 barmode="group",
                 text="Proportion",
@@ -229,7 +229,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     # 4. TEMPS DE SUIVI ET TAUX D'EVENEMENTS
     # ══════════════════════════════════════════════════════════════════════════
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### 4. Temps de suivi et taux d'evenements")
+    st.markdown("#### 4. Temps de suivi et taux d'événements")
 
     col1, col2 = st.columns(2)
 
@@ -237,8 +237,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
         fig = px.violin(
             df_profil, x="Groupe_Comorb", y=time_col,
             color="Groupe_Comorb",
-            title="Distribution du temps de suivi par comorbidites",
-            labels={"Groupe_Comorb": "Comorbidites", time_col: "Temps (mois)"},
+            title="Distribution du temps de suivi par comorbidités",
+            labels={"Groupe_Comorb": "Comorbidités", time_col: "Temps (mois)"},
             color_discrete_sequence=COLORS,
             box=True,
         )
@@ -262,9 +262,9 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
             textposition="outside",
         ))
         fig.update_layout(
-            title="Taux d'evenements par groupe de comorbidites",
-            xaxis_title="Comorbidites",
-            yaxis_title="Taux d'evenements (%)",
+            title="Taux d'événements par groupe de comorbidités",
+            xaxis_title="Comorbidités",
+            yaxis_title="Taux d'événements (%)",
             **PLOTLY_LAYOUT,
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -274,8 +274,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     # ══════════════════════════════════════════════════════════════════════════
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
     st.markdown("#### 5. Comparaisons pairwise (Log-Rank)")
-    st.markdown("Test de chaque paire de groupes pour identifier quels niveaux de comorbidites "
-                "different significativement.")
+    st.markdown("Test de chaque paire de groupes pour identifier quels niveaux de comorbidités "
+                "diffèrent significativement.")
 
     if len(groups) >= 2:
         pairwise_rows = []
@@ -290,8 +290,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                     event_observed_B=df.loc[m2, event_col],
                 )
                 pairwise_rows.append({
-                    "Groupe A": f"{int(g1)} comorbidite(s)",
-                    "Groupe B": f"{int(g2)} comorbidite(s)",
+                    "Groupe A": f"{int(g1)} comorbidité(s)",
+                    "Groupe B": f"{int(g2)} comorbidité(s)",
                     "Statistique": f"{r.test_statistic:.4f}",
                     "p-value": f"{r.p_value:.6f}",
                     "Significatif (p<0.05)": "Oui" if r.p_value < 0.05 else "Non",
@@ -304,8 +304,8 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     # ══════════════════════════════════════════════════════════════════════════
     if "Treatment" in df.columns:
         st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-        st.markdown("#### 6. Interaction Comorbidites x Traitement")
-        st.markdown("Est-ce que l'effet du traitement varie selon le nombre de comorbidites ?")
+        st.markdown("#### 6. Interaction Comorbidités x Traitement")
+        st.markdown("Est-ce que l'effet du traitement varie selon le nombre de comorbidités ?")
 
         fig = go.Figure()
         kmf = KaplanMeierFitter()
@@ -330,7 +330,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
 
         fig.add_hline(y=0.5, line_dash="dot", line_color="rgba(255,255,255,0.3)")
         fig.update_layout(
-            title="Survie par comorbidites et traitement",
+            title="Survie par comorbidités et traitement",
             xaxis_title="Temps (mois)",
             yaxis_title="S(t)",
             yaxis=dict(range=[0, 1.05]),
@@ -349,11 +349,11 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
                     continue
                 kmf.fit(df.loc[mask, time_col], event_observed=df.loc[mask, event_col])
                 summary_rows.append({
-                    "Comorbidites": str(g),
+                    "Comorbidités": str(g),
                     "Traitement": treat,
                     "n": int(mask.sum()),
-                    "Evenements": int(df.loc[mask, event_col].sum()),
-                    "Mediane survie": f"{kmf.median_survival_time_:.1f}",
+                    "Événements": int(df.loc[mask, event_col].sum()),
+                    "Médiane survie": f"{kmf.median_survival_time_:.1f}",
                     "Survie 12 mois": f"{float(kmf.predict(12))*100:.1f}%",
                     "Survie 36 mois": f"{float(kmf.predict(36))*100:.1f}%",
                 })
@@ -364,7 +364,7 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     # 7. SYNTHESE
     # ══════════════════════════════════════════════════════════════════════════
     st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
-    st.markdown("#### Synthese")
+    st.markdown("#### Synthèse")
 
     # Compute key findings
     medians_by_group = {}
@@ -382,24 +382,24 @@ def render(df: pd.DataFrame, time_col: str, event_col: str):
     r_global = multivariate_logrank_test(df[time_col], comorb, df[event_col])
 
     findings = []
-    findings.append(f"- Le nombre moyen de comorbidites est de **{comorb.mean():.2f}** "
-                    f"(mediane : {comorb.median():.0f}, max : {int(comorb.max())}).")
-    findings.append(f"- **{pct_multi:.1f}%** des patients ont 2 comorbidites ou plus.")
+    findings.append(f"- Le nombre moyen de comorbidités est de **{comorb.mean():.2f}** "
+                    f"(médiane : {comorb.median():.0f}, max : {int(comorb.max())}).")
+    findings.append(f"- **{pct_multi:.1f}%** des patients ont 2 comorbidités ou plus.")
 
     if r_global.p_value < 0.05:
         findings.append(f"- Le test du Log-Rank global est **significatif** (p = {r_global.p_value:.6f}) : "
-                        f"le nombre de comorbidites a un impact sur la survie.")
+                        f"le nombre de comorbidités a un impact sur la survie.")
     else:
         findings.append(f"- Le test du Log-Rank global est **non significatif** (p = {r_global.p_value:.4f}).")
 
-    findings.append(f"- Survie mediane la plus longue : **{worst_group} comorbidite(s)** "
+    findings.append(f"- Survie médiane la plus longue : **{worst_group} comorbidité(s)** "
                     f"({medians_by_group[worst_group]:.1f} mois).")
-    findings.append(f"- Survie mediane la plus courte : **{best_group} comorbidite(s)** "
+    findings.append(f"- Survie médiane la plus courte : **{best_group} comorbidité(s)** "
                     f"({medians_by_group[best_group]:.1f} mois).")
 
     if event_rate_0 is not None:
-        findings.append(f"- Taux d'evenement : **{event_rate_0:.1f}%** sans comorbidite "
-                        f"vs **{event_rate_max:.1f}%** avec {int(comorb.max())} comorbidite(s).")
+        findings.append(f"- Taux d'événement : **{event_rate_0:.1f}%** sans comorbidité "
+                        f"vs **{event_rate_max:.1f}%** avec {int(comorb.max())} comorbidité(s).")
 
     for f in findings:
         st.markdown(f)
